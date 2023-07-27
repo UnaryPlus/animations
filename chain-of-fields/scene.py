@@ -1,5 +1,6 @@
 from manim import *
 import numpy as np
+import math
 
 blue = BLUE_D
 red = RED_D
@@ -22,7 +23,8 @@ def circle_chain(start, direction, buff, start_radius, delta_radius, n, **kwargs
 
 class ChainOfFields(Scene):
     def construct(self):
-        self.scene1()
+        # self.scene1()
+        self.scene2()
 
     def fade_all(self, *mobjects, reverse=False, lag_ratio=0.05):
         fade_iter = reversed(mobjects) if reverse else mobjects
@@ -37,7 +39,7 @@ class ChainOfFields(Scene):
         c_direction = UP * 0.25 + RIGHT
         circles = circle_chain(start=c_start, direction=c_direction, buff=0.3, start_radius=0.2, delta_radius=0.1, n=3, color=red)
         circles.append(Ellipse(width=6, height=4, color=red).next_to(circles[-1], RIGHT, buff=0.3))
-
+ 
         self.play(DrawBorderThenFill(owen))
         self.play(FadeIn(me), GrowArrow(arrow, point_color=BLACK))
         self.play(AnimationGroup(*[ FadeIn(c) for c in circles ], lag_ratio=0.2))
@@ -105,10 +107,46 @@ class ChainOfFields(Scene):
 
         self.fade_all(box1, distr2_exp, distr1_exp, star_exp, strike)
 
-        chal = Text('Try it yourself:', font='Didot', slant=ITALIC, font_size=50).shift(UP, 1)
+        chal = Text('Try it yourself:', font='Didot', slant=ITALIC, font_size=50).shift(UP)
         laws = VGroup(distr1_star, distr2_star)
-        self.play(FadeIn(chal))
-        self.play(laws.animate.next_to(chal, DOWN, buff=0.5))
+        self.play(FadeIn(chal), laws.animate.next_to(chal, DOWN, buff=0.5))
+
+        self.play(FadeOut(chal, laws))
+    
+    def scene2(self):
+        exp = Text('exponential function', font='Didot', slant=ITALIC, font_size=50).to_edge(UP, buff=1)
+        nots = MathTex('e^x', '\quad \exp x', font_size=50, color=blue).next_to(exp, DOWN, buff=0.5)
+        strike = Line(nots[0].get_left(), nots[0].get_right(), color=red).shift(DOWN * 0.1 + LEFT * 0.05)
+        nots[1].set_color(red)
+
+        axes = Axes(x_range=(-3, 3), y_range=(-1, 3)).scale(0.4).to_edge(DOWN, buff=1)
+        curve = axes.plot(lambda x: math.exp(x), x_range=(-3, 1.5), color=red)
+
+        self.play(FadeIn(axes))
+        self.play(AnimationGroup(Write(exp), Create(curve), lag_ratio=0.3))
+        self.play(FadeIn(nots[0]))
+        self.play(GrowFromPoint(strike, strike.get_start()), FadeIn(nots[1]))
+
+        self.play(AnimationGroup(
+            FadeOut(nots, strike), 
+            AnimationGroup(exp.animate.to_corner(UL, buff=1), VGroup(axes, curve).animate.to_corner(DR, buff=1)), 
+            lag_ratio=0.3))
+
+        prop1 = Tex('1. $ \exp(x + y) = \exp x \cdot \exp y $', font_size=50, color=blue).next_to(exp, DOWN, buff=0.5, aligned_edge=LEFT)
+        prop2 = Tex('2. ', 'real numbers ', '$\longleftrightarrow$ positive numbers', color=green).next_to(prop1, DOWN, buff=1.5, aligned_edge=LEFT)
+        pos_axis = Line(axes[1].number_to_point(0), axes[1].get_end())
+        real_brace = Brace(axes[0], DOWN, color=green)
+        pos_brace = Brace(pos_axis, RIGHT, color=green)
+
+        self.play(FadeIn(prop1))
+        self.play(FadeIn(prop2[0]))
+        self.play(FadeIn(prop2[1], real_brace))
+        self.play(FadeIn(prop2[2]), ReplacementTransform(real_brace, pos_brace))
+        self.play(FadeOut(pos_brace))
+
+
+
+    
 
 
         
