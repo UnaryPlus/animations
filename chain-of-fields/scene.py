@@ -1,13 +1,7 @@
-# TODO: use constants and adjust them
-# TODO: review arrow buffs
-# TODO: change color scheme
-# TODO: standardize fonts, font sizes, line widths
-# TODO: standardize variable name
-# TODO: use big dot for multiplication?
-# TODO: use arrange()
-# TODO: use transparent instead of black
+# WARNING: bad code ahead!
 
 from manim import *
+from manim_voiceover import VoiceoverScene
 import numpy as np
 import math
 
@@ -20,6 +14,7 @@ yellow = YELLOW_D
 
 fancy = dict(font='Didot', slant=ITALIC)
 tip_size = lambda x: dict(tip_length=x, tip_width=x)
+sf = 1.4
 
 def add_bookmarks(text):
     return text.replace('{', '<bookmark mark="').replace('}', '"/>')
@@ -40,7 +35,19 @@ def frange(x, y, jump):
         yield x
         x += jump
 
-class ChainOfFields(Scene):
+def fadein_shift(mobject, vec):
+    shifted_copy = mobject.copy().shift(vec)
+    mobject.fade(1) 
+    return Transform(mobject, shifted_copy)
+
+def double_arrow(m1, m2):
+    c = VGroup(Line(m1, m2, buff=0.1, color=yellow))
+    c += c[0].copy()
+    c[0].add_tip(**tip_size(0.27))
+    c[1].add_tip(**tip_size(0.27), at_start=True)
+    return c
+
+class ChainOfFields(VoiceoverScene):
     def construct(self):
         # self.scene1()
         # exp_iso = self.scene2()
@@ -49,8 +56,12 @@ class ChainOfFields(Scene):
         # self.scene5(star_def)
         # ops = self.scene6()
         # fields = self.scene7(ops)
-        # self.scene8(fields)
-        self.scene9()
+        # K_1 = self.scene8(fields)
+        # self.scene9(*K_1)
+        # self.scene10()
+        # self.scene11(*K_1)
+        # self.scene12()
+        self.scene13()
 
     def fade_all(self, *mobjects, reverse=False, lag_ratio=0.05):
         fade_iter = reversed(mobjects) if reverse else mobjects
@@ -280,10 +291,10 @@ class ChainOfFields(Scene):
         self.play(ReplacementTransform(homo2, homo2_star), ReplacementTransform(ques, star), ReplacementTransform(arr_ques, arr_star))
 
         star_def1 = MathTex('\exp({{\log x}} \cdot {{\log y}}) = \exp {{(\log x)}} {{\star}} \exp {{(\log y)}}', font_size=50, color=blue).move_to(homo2)
-        star_def2 = MathTex('\exp(\log x \cdot \log y) =', '\exp (\log {{a}}) {{\star}} \exp (\log {{b}})', font_size=50, color=blue).move_to(homo2)
-        star_def3 = MathTex('\exp(\log x \cdot \log y) =', 'a', '\star', 'b', font_size=50, color=blue).move_to(homo2)
-        star_def4 = MathTex('\exp(\log x \cdot \log y)', '=', 'a \star b', font_size=50, color=blue).move_to(homo2)
-        star_def5 = MathTex('a \star b', '=', '\exp(\log x \cdot \log y)', font_size=50, color=blue).move_to(homo2)
+        star_def2 = MathTex('\exp(\log x \cdot \log y) =', '\exp (\log {{x}}) {{\star}} \exp (\log {{y}})', font_size=50, color=blue).move_to(homo2)
+        star_def3 = MathTex('\exp(\log x \cdot \log y) =', 'x', '\star', 'y', font_size=50, color=blue).move_to(homo2)
+        star_def4 = MathTex('\exp(\log x \cdot \log y)', '=', 'x \star y', font_size=50, color=blue).move_to(homo2)
+        star_def5 = MathTex('x \star y', '=', '\exp(\log x \cdot \log y)', font_size=50, color=blue).move_to(homo2)
 
         self.play(ReplacementTransform(homo2_star, star_def1))
         self.add(star_def2); self.remove(star_def1)
@@ -357,7 +368,7 @@ class ChainOfFields(Scene):
         mul_one.get_parts_by_tex('1').set_color(red)
         star_one.get_parts_by_tex('e').set_color(red)
 
-        mul_inv = MathTex('x \cdot {{\\frac{1}{a}}} = {{1}} \ (x \\neq {{0}})', font_size=prop_fs, color=blue).next_to(mul_one, ORIGIN, buff=0, aligned_edge=RIGHT).shift(prop_dy2)
+        mul_inv = MathTex('x \cdot {{\\frac{1}{x}}} = {{1}} \ (x \\neq {{0}})', font_size=prop_fs, color=blue).next_to(mul_one, ORIGIN, buff=0, aligned_edge=RIGHT).shift(prop_dy2)
         star_inv = MathTex('x \star {{\exp \\frac{1}{\log x}}} = {{e}} \ (x \\neq {{1}})', font_size=prop_fs, color=blue).next_to(star_one, ORIGIN, buff=0, aligned_edge=LEFT).shift(prop_dy2)
         mul_inv.get_parts_by_tex('1').set_color(red)
         mul_inv.get_parts_by_tex('0').set_color(red)
@@ -885,7 +896,6 @@ class ChainOfFields(Scene):
             *fields, *plus, *dots, *neg_fields, *neg_plus, *neg_dots,
             *eqs, exp, log, *exp_arrs, *log_arrs, log_arr1))
         
-        sf = 1.4
         self.play(VGroup(K_1, top, top_tips, bottom, bottom_tips, log0, log0_label).animate.scale(sf).move_to(ORIGIN))
 
         new_top = NumberLine(x_range=(-8, 8), length=12).scale(sf).move_to(top)
@@ -941,17 +951,471 @@ class ChainOfFields(Scene):
         addition = Text('addition', **fancy, font_size=(40 * sf)).next_to(minf, RIGHT, buff=0.7).shift(UR * 0.3)
         self.play(Write(addition))
         self.fade_all(K_1, VGroup(x_dot, new_x_label), top, sq_def, VGroup(log0, minf), addition, VGroup(s_dot, new_s_label), bottom)
+        return K_1, top, log0, minf, bottom
 
-    def scene9(self):
-        ext = MathTex(
-            'x \cdot y =' +
-            '\\begin{cases} x, y > 0 & x \cdot y \\\\' +
-            'x < 0 \\text{ and } y > 0 & -(-x \cdot y) \\\\ x > 0 \\text{ and } y < 0 & -(x \cdot -y) \\\\' +
-            'x, y < 0 & -x \cdot -y \\\\' +
-            'x = 0 \\text{ or } y = 0 & 0 \\end{cases}',
-            font_size=50) 
-
-        rect = Rectangle(fill_opacity=1, stroke_width=1, fill_color=BLACK).set_z_index(1)
+    def scene9(self, K_1, top, log0, minf, bottom):
+        lhs = MathTex('x {{\cdot}} y =', font_size=50)
         
-        self.add(rect)
-        self.play(FadeIn(ext))
+        rhs_tex = [ 
+            'x, y > 0:', 'x \cdot y',
+            'x < 0 \\text{ and } y > 0:', '-(-x \cdot y)',
+            'x > 0 \\text{ and } y < 0:', '-(x \cdot -y)',
+            'x, y < 0:', '-x \cdot -y', 
+            'x = 0 \\text{ or } y = 0:', '0', 
+        ]
+        
+        rhs = VGroup(*[ MathTex(t, substrings_to_isolate=['\cdot', '0', '-'], font_size=50) for t in rhs_tex ]).arrange_in_grid(cols=2, buff=0.5, cell_alignment=LEFT)
+        brace = Brace(rhs, LEFT)
+        VGroup(lhs, VGroup(brace, rhs)).arrange(RIGHT, buff=0.25)
+
+        self.play(FadeIn(lhs))
+        self.play(FadeIn(brace, rhs[0:2]))
+        self.play(FadeIn(rhs[2:6]))
+        self.play(FadeIn(rhs[6:8]))
+        self.play(FadeIn(rhs[8:]))
+
+        rhs2_tex = [ s.replace('\cdot', '+') for s in rhs_tex ]
+        rhs3_tex = [ s.replace('0', '-\infty') for s in rhs2_tex ]
+        rhs4_tex = [ (s.replace('-', '{\sim}') if i in [3,5,7] else s) for (i, s) in enumerate(rhs3_tex) ]
+        rhs2 = VGroup(*[ MathTex(t, substrings_to_isolate=['+', '0', '-'], font_size=50) for t in rhs2_tex ]).arrange_in_grid(cols=2, buff=0.5, cell_alignment=LEFT)
+        rhs3 = VGroup(*[ MathTex(t, substrings_to_isolate=['+', '-\infty', '-'], font_size=50) for t in rhs3_tex ]).arrange_in_grid(cols=2, buff=0.5, cell_alignment=LEFT)
+        rhs4 = VGroup(*[ MathTex(t, substrings_to_isolate=['+', '-\infty', '{\sim}'], font_size=50) for t in rhs4_tex ]).arrange_in_grid(cols=2, buff=0.5, cell_alignment=LEFT)
+        for m in [rhs2, rhs3, rhs4]:
+            m.shift(rhs.get_left() - m.get_left())
+        
+        lhs2 = MathTex('x {{+}} y =', font_size=50)
+        lhs2.shift(lhs.get_right() - lhs2.get_right())
+
+        self.play(Transform(rhs, rhs2), Transform(lhs, lhs2))
+        self.play(Transform(rhs, rhs3))
+        self.play(Transform(rhs, rhs4))
+        self.play(FadeOut(*self.get_top_level_mobjects()))
+    
+        self.play(FadeIn(K_1, top, log0, minf, bottom))
+
+        x = Dot(point=top.number_to_point(1), color=red).scale(sf)
+        y = Dot(point=bottom.number_to_point(3), color=blue).scale(sf)
+        y2 = Dot(point=top.number_to_point(3), color=blue).scale(sf)
+        z = Dot(point=top.number_to_point(4), color=green).scale(sf)
+        z2 = Dot(point=bottom.number_to_point(4), color=green).scale(sf)
+        self.play(FadeIn(x, y))
+        self.play(Transform(y, y2))
+        self.play(Transform(y, z, path_arc=(-TAU / 4)), ReplacementTransform(x, z, path_arc=(-TAU / 4)))
+        self.remove(y)
+        self.play(Transform(z, z2))
+        self.fade_all(K_1, top, VGroup(log0, minf), VGroup(bottom, z))
+
+        VGroup(lhs, brace, rhs).move_to(ORIGIN)
+
+        rhs5_tex = [
+            rhs4_tex[0], '{{ x }} + {{ y }}',
+            rhs4_tex[2], '{{ {\sim} }} ( {{ {\sim} x }} + {{ y }} )',
+            rhs4_tex[4], '{{ {\sim} }} ( {{ x }} + {{ {\sim} y }} )',
+            rhs4_tex[6], '{{ {\sim} x }} + {{ {\sim} y }}',
+            rhs4_tex[8], '-\infty',
+        ]
+        rhs5 = VGroup(*[ MathTex(t, font_size=50) for t in rhs5_tex ]).arrange_in_grid(cols=2, buff=0.5, cell_alignment=LEFT).move_to(rhs)
+        rhs5[1][0].set_color(blue); rhs5[1][2].set_color(blue)
+        rhs5[3][0].set_color(blue); rhs5[3][2].set_color(blue); rhs5[3][4].set_color(blue)
+        rhs5[5][0].set_color(blue); rhs5[5][2].set_color(blue); rhs5[5][4].set_color(blue)
+        rhs5[7][0].set_color(blue); rhs5[7][2].set_color(blue)
+        top_def = VGroup(lhs.copy(), brace.copy(), rhs5).scale(0.65).to_edge(UP, buff=0.8)
+
+        rhs6_tex = [
+            rhs4_tex[0], '{{ \log (\exp x) }} + {{ \log (\exp y) }}',
+            rhs4_tex[2], '{{ \log (-\exp }} \,( {{ \log (-\exp x) }} + {{ \log (\exp y) }} ) {{ ) }}',
+            rhs4_tex[4], '{{ \log (-\exp }} \,( {{ \log (\exp x) }} + {{ \log (-\exp y) }} ) {{ ) }}',
+            rhs4_tex[6], '{{ \log (-\exp x) }} + {{ \log (-\exp y) }}',
+            rhs4_tex[8], '-\infty',
+        ]
+        rhs6 = VGroup(*[ MathTex(t, font_size=50) for t in rhs6_tex ]).arrange_in_grid(cols=2, buff=0.5, cell_alignment=LEFT)
+        rhs6.shift(rhs.get_left() - rhs6.get_left())
+        rhs6[1][0].set_color(blue); rhs6[1][2].set_color(blue)
+        rhs6[3][0].set_color(blue); rhs6[3][2].set_color(blue); rhs6[3][4].set_color(blue); rhs6[3][6].set_color(blue)
+        rhs6[5][0].set_color(blue); rhs6[5][2].set_color(blue); rhs6[5][4].set_color(blue); rhs6[5][6].set_color(blue)
+        rhs6[7][0].set_color(blue); rhs6[7][2].set_color(blue)
+        bottom_def = VGroup(lhs.copy(), brace.copy(), rhs6).scale(0.65).move_to(ORIGIN).to_edge(DOWN, buff=0.8)
+
+        self.play(FadeIn(top_def))
+        self.play(FadeIn(bottom_def))
+
+        final = MathTex('{{\log}} ({{\exp}} x \cdot {{\exp}} y)', font_size=50, color=green).scale(0.65)
+        finals = [ final.copy().shift(rhs6[i].get_left() - final.get_left()) for i in range(1, 8, 2) ]
+        self.play(*[ ReplacementTransform(rhs6[2 * i + 1], finals[i]) for i in range(4) ])
+        self.play(FadeOut(top_def), bottom_def.animate.set_x(-0.25))
+
+        y = 1.5
+        eq1 = MathTex('\log (\exp {{x}} \cdot \exp y)', font_size=50, color=green).shift(UP * y)
+        eq2 = MathTex('\log (\exp {{(-\infty)}} \cdot \exp y)', font_size=50, color=green).shift(UP * y)
+        eq3 = MathTex('\log ({{\exp (-\infty)}} \cdot \exp y)', font_size=50, color=green).shift(UP * y)
+        eq4 = MathTex('\log ({{0}} \cdot \exp y)', font_size=50, color=green).shift(UP * y)
+        eq5 = MathTex('-\infty', font_size=50, color=green).shift(UP * y)
+        self.play(FadeIn(eq1))
+        self.play(ReplacementTransform(eq1, eq2))
+        self.add(eq3); self.remove(eq2)
+        self.play(ReplacementTransform(eq3, eq4))
+        self.play(ReplacementTransform(eq4, eq5))
+
+        lhs_final = MathTex('x {{+}} y =', font_size=50)
+        rhs_final = MathTex('{{\log}} ({{\exp}} x \cdot {{\exp}} y)', font_size=50, color=green)
+        VGroup(lhs_final, rhs_final).arrange(RIGHT, buff=0.15).shift(DOWN * y)
+        self.play(ReplacementTransform(bottom_def[0], lhs_final), FadeOut(bottom_def[1], bottom_def[2][0], bottom_def[2][2:]), ReplacementTransform(finals[0], rhs_final))
+        
+        rhs2 = MathTex('{{\log}} ({{\log^{-1}}} x \cdot {{\log^{-1}}} y)', font_size=50, color=green)
+        rhs3 = MathTex('{{\exp^{-1}}} ({{\log^{-1}}} x \cdot {{\log^{-1}}} y)', font_size=50, color=green)
+        rhs2.shift(rhs_final.get_left() - rhs2.get_left()).shift(UP * 0.065)
+        rhs3.shift(rhs_final.get_left() - rhs3.get_left()).shift(UP * 0.065)
+
+        dotn_def = MathTex('x \cdot_n y = \exp^n(\log^n x \cdot \log^n y)', font_size=50, color=blue).move_to(eq5)
+
+        self.play(ReplacementTransform(rhs_final, rhs2))
+        self.play(ReplacementTransform(rhs2, rhs3))
+        self.play(FadeOut(eq5), VGroup(lhs_final, rhs3).animate.set_x(0))
+        self.play(FadeIn(dotn_def))
+
+        lhs2 = MathTex('x {{\cdot_{-1}}} y =', font_size=50)
+        lhs2.shift(lhs_final[-1].get_right() - lhs2[-1].get_right())
+        self.play(ReplacementTransform(lhs_final, lhs2))
+
+        plus_1 = MathTex('x +_{-1} y =', '\exp^{-1} (\log^{-1} x + \log^{-1} y)', font_size=50)
+        plus_1[1].set_color(green)
+        plus_1.move_to(VGroup(lhs2, rhs3, dotn_def))
+        self.play(FadeIn(plus_1))
+
+        self.fade_all(dotn_def, plus_1, VGroup(lhs2, rhs3))
+    
+    def scene10(self):
+        table = VGroup(
+            MathTex('K_{-1}', font_size=50, color=green), MathTex('+_{-1}', font_size=50, color=blue), MathTex('\cdot_{-1}', font_size=50, color=blue),
+            MathTex('K_0', font_size=50, color=green), MathTex('+_0', font_size=50, color=blue), MathTex('\cdot_0', font_size=50, color=blue),
+            MathTex('K_1', font_size=50, color=green), MathTex('+_1', font_size=50, color=blue), MathTex('\cdot_1', font_size=50, color=blue),
+            MathTex('K_2', font_size=50, color=green), MathTex('+_2', font_size=50, color=blue), MathTex('\cdot_2', font_size=50, color=blue),
+            MathTex('K_3', font_size=50, color=green), MathTex('+_3', font_size=50, color=blue), MathTex('\cdot_3', font_size=50, color=blue),
+            MathTex('\\vdots', font_size=50, color=green), MathTex('\\vdots', font_size=50, color=blue), MathTex('\\vdots', font_size=50, color=blue),
+        )
+        table.arrange_in_grid(cols=3, buff=0.75)
+        for m in table[2:15:3]: m.shift(DOWN * 0.06)
+
+        eq = MathTex('=', font_size=75, color=red).rotate(PI / 4)
+        eqs = [ eq.copy().move_to(VGroup(table[i], table[i + 2])).shift(UR * 0.06) for i in range(2, 15, 3) ]
+        center = VGroup(*eqs).get_x()
+        for m in eqs: m.set_x(center)
+        self.play(FadeIn(table, *eqs))
+
+        plus_box = SurroundingRectangle(table[1], color=yellow, buff=0.1)
+        self.play(Create(plus_box))
+        self.play(FadeOut(plus_box))
+
+        log_arr = ArcBetweenPoints(table[3].get_corner(UR) + DOWN * 0.135, table[0].get_corner(DR) + DL * 0.05 + DOWN * 0.02, angle=(TAU / 7), color=purple).add_tip(**tip_size(0.27))
+        exp_arr = ArcBetweenPoints(table[0].get_corner(DL), table[3].get_corner(UL) + DOWN * 0.18, angle=(TAU / 6), color=purple).add_tip(**tip_size(0.27))
+        log = MathTex('\log', font_size=40, color=purple).next_to(log_arr, RIGHT, 0.1)
+        exp = MathTex('\exp', font_size=40, color=purple).next_to(exp_arr, LEFT, 0.1)
+        self.play(FadeIn(log_arr, exp_arr, log, exp))
+
+        left = VGroup(table, *eqs, log_arr, exp_arr, log, exp)
+        iso = Tex('$K_{-1}$', ' and ', '$K_0$', ' have \\\\ the same structure', font_size=50).shift(RIGHT * 3)
+        iso.get_parts_by_tex('K').set_color(green)
+        self.play(FadeIn(iso), left.animate.shift(LEFT * 2.5))
+
+        top_dots = table[15:].copy().set_opacity(0).next_to(table, UP, buff=0.75)
+        self.play(left.animate.shift(DOWN * 0.87), top_dots.animate.set_opacity(1).shift(DOWN * 0.87))
+        self.play(FadeOut(*self.get_top_level_mobjects()))
+
+    def scene11(self, K_1, top, log0, minf, bottom):
+        minf = MathTex('\log(0)', color=purple).next_to(log0, RIGHT, buff=(0.15 * sf))
+        self.play(FadeIn(K_1, top, log0, minf, bottom))
+
+        log_1 = Dot(top.number_to_point(0), color=red).scale(sf)
+        log_n1 = Dot(bottom.number_to_point(0), color=blue).scale(sf).set_z_index(1)
+        log_1_label = MathTex('\log(1)', color=red).next_to(log_1, UP, buff=(0.15 * sf))
+        log_n1_label = MathTex('\log(-1)', color=blue).next_to(log_n1, UP, buff=(0.15 * sf))
+        self.play(FadeIn(log_1, log_n1, log_1_label, log_n1_label))
+
+        left = NumberLine(x_range=(-8, 0), length=6).scale(sf)
+        left.move_to(bottom.get_center() - left.get_right())
+        self.add(left)
+
+        self.play(
+            log_n1.animate.move_to(bottom.number_to_point(-1)), 
+            log_n1_label.animate.shift(bottom.number_to_point(-1) - bottom.number_to_point(0)),
+            FadeOut(log_1, log_1_label, bottom)
+        )
+
+        n1 = log_1.move_to(top.number_to_point(-1))
+        n1_label = MathTex('-1', color=red).next_to(n1, UP, buff=(0.15 * sf))
+        self.play(FadeIn(n1, n1_label))
+
+        self.play(log0.animate.move_to(left.number_to_point(0)), minf.animate.shift(left.number_to_point(0) - log0.get_center()))
+        self.play(FadeOut(n1, n1_label, log_n1, log_n1_label, log0, minf))
+
+        arr = Arrow(top.number_to_point(-2.5), left.number_to_point(-2.5), color=purple, buff=0.5)
+        log = MathTex('\log', font_size=(40 * sf), color=purple).next_to(arr, RIGHT, buff=(0.15 * sf))
+        self.play(GrowArrow(arr, point_color=BLACK), FadeIn(log))
+
+        lines = VGroup(left)
+        diff = left.number_to_point(0) - top.number_to_point(0)
+        for i in range(1, 4):
+            lines += left.copy().shift(diff * i)
+        vdots = MathTex('\\vdots', font_size=50).move_to(left).shift(diff * 4)
+
+        top_target = top.copy().to_edge(UP, buff=1)
+        lines_target = lines.copy().arrange(DOWN, buff=1).next_to(top_target, DOWN, buff=1, aligned_edge=LEFT)
+        vdots_target = vdots.copy().next_to(lines_target, DOWN, buff=0.5).set_x(lines[-1].number_to_point(-3.5)[0])
+
+        self.play(FadeOut(arr, log, K_1), Transform(top, top_target), Transform(lines, lines_target), Transform(vdots, vdots_target))
+
+        R = MathTex('\mathbb{R}', font_size=60).next_to(top, DOWN, buff=0.25).set_x(top.number_to_point(1.5)[0])
+        self.play(FadeIn(R))
+
+        logs = VGroup(*[ 
+            Arrow((top if i == 0 else lines[i - 1]).number_to_point(-3.5), lines[i].number_to_point(-3.5), buff=0.2, color=purple)
+            for i in range(len(lines))
+        ])
+        log = MathTex('\log', font_size=40, color=purple).next_to(logs[0], RIGHT, buff=0.2)
+        self.play(FadeIn(logs[0], log))
+        self.play(FadeIn(logs[1]))
+        self.play(FadeIn(*logs[2:]))
+
+        E = MathTex('\mathrm{E}', font_size=100).next_to(top, DOWN, buff=2).set_x(top.number_to_point(3.5)[0])
+        expo = Text('exponential numbers', **fancy, font_size=50).next_to(E, DOWN, buff=0.5)
+        self.play(FadeIn(E))
+        self.play(Write(expo))
+
+        total = MathTex('\log : \mathrm{E} \\to \mathrm{E}', font_size=50).next_to(expo, DOWN, buff=0.5)
+        self.play(FadeIn(total))
+
+        diff = lines[1].number_to_point(0) - lines[0].number_to_point(0)
+        start = top.number_to_point(0) - diff/2
+        braces = [ Brace(Line(start, start + diff * i), RIGHT, buff=0.1, color=blue) for i in range(1, 5) ]
+        ks = [ 
+            MathTex('K', '_{' + str(-i) + '}', font_size=60, color=blue).next_to(braces[0], RIGHT, buff=0.1).shift(-diff/2 + DOWN * 0.1)
+            for i in range(0, 4) 
+        ]
+
+        self.play(FadeIn(braces[0], ks[0]))
+        self.play(ReplacementTransform(braces[0], braces[1]), ReplacementTransform(ks[0], ks[1]))
+        self.play(ReplacementTransform(braces[1], braces[2]), ReplacementTransform(ks[1], ks[2]))
+        self.play(ReplacementTransform(braces[2], braces[3]), ReplacementTransform(ks[2], ks[3]))
+        
+        dotn_def = MathTex('x \cdot{{_n}} y = \exp{{^n}}(\log{{^n}} x \cdot \log{{^n}} y)', font_size=50, color=blue).next_to(E, UP, buff=1)
+        dot3_def = MathTex('x \cdot{{_{-3}}} y = \exp{{^{-3}}}(\log{{^{-3}}} x \cdot \log{{^{-3}}} y)', font_size=40, color=blue).move_to(dotn_def)
+        self.play(FadeOut(braces[3], ks[3], R))
+        self.play(FadeIn(dotn_def))
+        self.play(ReplacementTransform(dotn_def, dot3_def))
+
+        x = Dot(lines[2].number_to_point(-1.75), color=blue).scale(sf)
+        y = Dot(lines[0].number_to_point(-0.25), color=red).scale(sf)
+        xl = MathTex('x', font_size=50, color=blue).next_to(x, DOWN, buff=0.2)
+        yl = MathTex('y', font_size=50, color=red).next_to(y, DOWN, buff=0.2)
+        self.play(FadeIn(x, y, xl, yl))
+    
+        yn = math.exp(math.exp(-0.25))
+        self.play(x.animate.move_to(lines[1].number_to_point(-1.75)), y.animate.move_to(top.number_to_point(-0.25)), FadeOut(xl, yl))
+        self.play(x.animate.move_to(lines[0].number_to_point(-1.75)), y.animate.move_to(top.number_to_point(math.exp(-0.25))))
+        self.play(x.animate.move_to(top.number_to_point(-1.75)), y.animate.move_to(top.number_to_point(yn)))
+
+        prod = -1.75 * yn
+        arc = TAU / 6
+        z = Dot(top.number_to_point(prod), color=green).scale(sf)
+        self.play(ReplacementTransform(x, z, path_arc=arc), ReplacementTransform(y, z, path_arc=arc))
+        self.play(z.animate.move_to(lines[0].number_to_point(prod)))
+        self.play(z.animate.move_to(lines[1].number_to_point(prod)))
+        self.play(z.animate.move_to(lines[2].number_to_point(prod)))
+
+        self.play(FadeIn(braces[3], ks[3]))
+        self.fade_all(
+            VGroup(braces[3], ks[3]), 
+            VGroup(log, logs[0], dot3_def), 
+            VGroup(logs[1], E),
+            VGroup(logs[2], z, expo),
+            VGroup(logs[3], total),
+        )
+
+        ks = [ top ]
+        for m in lines:
+            ks.append(top.copy().move_to(m.number_to_point(0)))
+        self.play(FadeIn(*ks[1:]), vdots.animate.set_x(0))
+        self.remove(*lines)
+
+        x = Dot(ks[0].number_to_point(0.5), color=red).scale(sf)
+        lx1 = Dot(ks[1].number_to_point(0.5), color=blue).scale(sf)
+        lx2 = Dot(ks[0].number_to_point(math.log(0.5)), color=blue).scale(sf)
+
+        log1 = Line(x, lx1, buff=0.1, color=purple).add_tip(**tip_size(0.27))
+        log2 = ArcBetweenPoints(x.get_corner(UL) + UL * 0.05, lx2.get_corner(UR) + UR * 0.05, angle=TAU/6, color=purple).add_tip(**tip_size(0.27))
+        log_label = MathTex('\log', font_size=50, color=purple).next_to(log1, RIGHT, buff=0.175)
+        corr = double_arrow(lx1, lx2)
+        
+        self.play(FadeIn(lx1))
+        self.play(FadeIn(x, log1, log_label))
+        self.play(FadeIn(lx2, log2))
+        self.play(FadeIn(corr))
+        self.play(FadeOut(x, log1, log2, log_label))
+
+        lx3 = Dot(ks[2].number_to_point(math.exp(0.5)), color=blue).scale(sf)
+        lx4 = Dot(ks[3].number_to_point(math.exp(math.exp(0.5))), color=blue).scale(sf)
+        lx5 = Dot(ks[4].number_to_point(25), color=blue).scale(sf)
+        corr3 = double_arrow(lx1, lx3)
+        corr4 = double_arrow(lx3, lx4)
+        corr5 = double_arrow(lx4, lx5)
+        self.fadein_all(VGroup(lx3, corr3), VGroup(lx4, corr4), corr5)
+
+        scale_x = ks[0].number_to_point(1)[0] - ks[0].number_to_point(0)[0]
+        scale_y = ks[1].get_y() - ks[0].get_y()
+        f0 = lambda i: lambda t: ks[i].number_to_point(0) + RIGHT * scale_x * (-1/t + 1) + UP * scale_y * t
+        f1 = lambda i: lambda t: ks[i].number_to_point(0) + RIGHT * scale_x * t + UP * scale_y * t
+        f2 = lambda i: lambda t: ks[i].number_to_point(0) + RIGHT * scale_x * math.exp(t) + UP * scale_y * t
+        f3 = lambda i: lambda t: ks[i].number_to_point(0) + RIGHT * scale_x * math.exp(math.exp(t)) + UP * scale_y * t
+
+        guides = VGroup(
+            *[ ParametricFunction(f0(i), t_range=(0.1, 1), stroke_width=2, color=yellow) for i in range(4) ],
+            *[ ParametricFunction(f1(i), t_range=(0, 1), stroke_width=2, color=yellow) for i in range(4) ],
+            *[ ParametricFunction(f2(i), t_range=(0, 1), stroke_width=2, color=yellow) for i in range(4) ],
+            *[ ParametricFunction(f3(i), t_range=(0, 1), stroke_width=2, color=yellow) for i in range(4) ],
+        )
+        self.play(FadeOut(lx1, lx2, lx3, lx4, corr, corr3, corr4, corr5))
+        self.play(FadeIn(guides))
+
+        K_2 = MathTex('K_{-2}', font_size=40, color=green).next_to(ks[2], UP, buff=0.1).set_x(ks[2].number_to_point(-3.5)[0])
+        self.play(FadeIn(K_2))
+
+        points = [ ks[1].number_to_point(-2.5), ks[0].number_to_point(-1.5), ks[1].number_to_point(1.5)]
+        targets = [ ks[2].number_to_point(math.exp(-2.5)), ks[2].number_to_point(math.exp(math.exp(-1.5))), ks[2].number_to_point(math.exp(1.5)) ]
+        dots = [ Dot(p, color=blue).scale(sf) for p in points ]
+        self.play(FadeIn(*dots))
+        self.play(*[ dots[i].animate.move_to(targets[i]) for i in range(3) ])
+
+        kls = [ MathTex('K_{' + str(-i) + '}', font_size=40, color=green).next_to(ks[i], UP, buff=0.1).set_x(ks[i].number_to_point(-3.5)[0]) for i in range(5) ]
+        self.play(FadeIn(*kls), FadeOut(*dots))
+        self.remove(K_2)
+
+        diff = ks[0].get_center() - ks[1].get_center()
+        pks = [ ks[0].copy().shift(diff * i) for i in range(1, 3) ]
+        pkls = [ MathTex('K_{' + str(i) + '}', font_size=40, color=green).next_to(pks[i - 1], UP, buff=0.1).set_x(ks[0].number_to_point(-3.5)[0]) for i in range(1, 3) ]
+        pguides = guides.copy().shift(diff * 4)
+
+        self.play(
+            *[ m.animate.shift(DOWN * 2.5) for m in self.get_top_level_mobjects() ],
+            *[ fadein_shift(m, DOWN * 2.5) for m in [ *pks, *pkls, pguides ] ],
+        )
+
+        xd = Dot(ks[3].number_to_point(0.25), color=red).scale(sf)
+        yd = Dot(ks[0].number_to_point(0.25), color=blue).scale(sf)
+        xl = MathTex('x', font_size=50, color=red).next_to(xd, UP, buff=0.2)
+        yl = MathTex('y', font_size=50, color=blue).next_to(yd, UP, buff=0.2)
+        x = VGroup(xd, xl)
+        y = VGroup(yd, yl)
+        self.play(FadeIn(x, y))
+
+        xs = x.copy().shift(ks[2].number_to_point(math.log(0.25)) - xd.get_center())
+        ys = VGroup(
+            y.copy().shift(pks[0].number_to_point(math.log(0.25)) - yd.get_center()),
+            y.copy().shift(ks[1].number_to_point(math.exp(0.25)) - yd.get_center()),
+            y.copy().shift(ks[2].number_to_point(math.exp(math.exp(0.25))) - yd.get_center()))
+        self.play(FadeIn(xs, ys))
+
+        xbox = SurroundingRectangle(xs[0], buff=0.1, color=yellow)
+        ybox = SurroundingRectangle(ys[2][0], buff=0.1, color=yellow)
+        self.play(Create(xbox), Create(ybox))
+
+        sumd = Dot(ks[2].number_to_point(math.exp(math.exp(0.25)) + math.log(0.25)), color=green).scale(sf)
+        suml = MathTex('x +_{-2} y', font_size=40, color=green).next_to(sumd, DOWN, buff=0.2).shift(RIGHT * 0.3)
+        self.play(FadeIn(sumd))
+        self.play(FadeIn(suml))
+
+        self.play(FadeOut(x, y, xs, ys, xbox, ybox, sumd, suml))
+
+        yl.next_to(yd, DOWN, buff=0.2)
+        xs = VGroup(
+            x.copy().shift(pks[1].number_to_point(-2.5) - xd.get_center()),
+            x.copy().shift(pks[0].number_to_point(math.exp(-2.5)) - xd.get_center()),
+            x.copy().shift(ks[0].number_to_point(math.exp(math.exp(-2.5))) - xd.get_center()),
+            x.copy().shift(ks[1].number_to_point(math.exp(math.exp(math.exp(-2.5)))) - xd.get_center()))
+        ys = y.copy().shift(pks[1].number_to_point(2.2) - yd.get_center())
+        self.play(FadeIn(xs[1], ys))
+        self.play(FadeIn(xs[0], xs[2:]))
+
+        xbox.move_to(xs[0][0])
+        ybox.move_to(ys[0])
+        self.play(Create(xbox), Create(ybox))
+
+        prodd = Dot(pks[1].number_to_point(-2.5 * 2.2), color=green).scale(sf)
+        prodl = MathTex('x \cdot_2 y', font_size=40, color=green).next_to(prodd, UP, buff=0.2)
+        self.play(FadeIn(prodd, prodl))
+        self.fade_all(
+            VGroup(xs, ys, prodd, prodl, xbox, ybox), 
+            VGroup(guides, pguides),
+            VGroup(pks[1], pkls[1]),
+            VGroup(pks[0], pkls[0]),
+            *[ VGroup(ks[i], kls[i]) for i in range(len(ks)) ])
+    
+    def scene12(self):
+        eq1 = MathTex('\mathrm{E}', '\supset K_n', font_size=50)
+        eq2 = MathTex('\cdots \supset K_{-2} \supset K_{-1} \supset K_0 \supset K_1 \supset K_2 \supset \cdots', font_size=50)
+        eq3 = MathTex('K_0 = \mathbb{R}', '\qquad K_n = \{ \exp^n x \ |\  x \in \mathbb{R} \}', font_size=50)
+        eq4 = MathTex('K_{-2} = \{ \exp^{-2} x \} = \{ \log (\log x) \}', font_size=50)
+        VGroup(eq1, eq2, eq3, eq4).arrange(DOWN, buff=0.65)
+
+        self.play(FadeIn(eq1[0]))
+        self.play(FadeIn(eq1[1]))
+        self.play(FadeIn(eq2))
+        self.play(FadeIn(eq3[0]))
+        self.play(FadeIn(eq3[1]))
+        self.play(FadeIn(eq4))
+        self.fade_all(eq1, eq2, eq3, eq4)
+
+        plusn_def = MathTex('x +_n y', '= \exp^n(\log^n x + \log^n y)', font_size=50, color=blue)
+        dotn_def = MathTex('x \cdot_n y', '= \exp^n(\log^n x \cdot \log^n y)', font_size=50, color=green)
+        plus_dot = MathTex('x +_n y', '=', 'x \cdot_{n-1} y', font_size=50)
+        distr = MathTex('\cdot_n', '\\text{ distributes over }', '\cdot_{n - 1}', font_size=50)
+        chain = MathTex('\cdots \leftarrow {{\cdot_{-2}}} \leftarrow {{\cdot_{-1}}} \leftarrow {{\cdot_0}} \leftarrow {{\cdot_1}} \leftarrow {{\cdot_2}} \leftarrow \cdots', font_size=50)
+        VGroup(plusn_def, dotn_def, plus_dot, distr, chain).arrange(DOWN, buff=0.65)
+        
+        plus_dot[0].set_color(blue) 
+        plus_dot[2].set_color(green)
+        distr[0].set_color(green)
+        distr[2].set_color(green)
+        chain[1:10:2].set_color(green)
+
+        self.play(FadeIn(plusn_def[0]))
+        self.play(FadeIn(dotn_def[0]))
+        self.play(FadeIn(plusn_def[1], dotn_def[1]))
+        self.play(FadeIn(plus_dot))
+        self.play(FadeIn(distr))
+        self.play(FadeIn(chain))
+        self.fade_all(plusn_def, dotn_def, plus_dot, distr, chain)
+    
+    def scene13(self):
+        f = MathTex('f : \mathrm{E} \\to \mathbb{R}', font_size=50, color=blue)
+        map_0 = MathTex('f(0) = 0', font_size=50, color=blue) 
+        map_1 = MathTex('f(1) = 1', font_size=50, color=blue)
+        map_e = MathTex('f(e) = 2', font_size=50, color=blue)
+        map_log0 = MathTex('f(\log 0) = -1', font_size=50, color=blue)
+        gen = MathTex('f(\exp^n 0) = n', font_size=50, color=blue)
+        VGroup(f, map_0, map_1, map_e, map_log0).arrange(DOWN, buff=0.65)
+        gen.move_to(VGroup(map_1, map_e))
+
+        self.play(FadeIn(f))
+        self.play(FadeIn(map_0))
+        self.play(FadeIn(map_1))
+        self.play(FadeIn(map_e))
+        self.play(FadeIn(map_log0))
+        self.play(*[ ReplacementTransform(m, gen) for m in [ map_0, map_1, map_e, map_log0 ]])
+
+        ex1 = Tex(
+            '1. Find a ``natural" bijection \\\\ {{$f : \mathrm{E} \\to \mathbb{R}$}} such that \\\\ {{$f(\exp^n 0) = n$}} for all integers n.',
+            font_size=50)
+        ex2 = Tex(
+            '2. Construct $\mathrm{E}$ as a colimit (in $\mathbf{Set}$).',
+            font_size=50)
+        VGroup(ex1, ex2).arrange(DOWN, buff=0.65)
+        ex1[1:4:2].set_color(blue)
+
+        self.play(FadeIn(ex1[0], ex1[2], ex1[4]), f.animate.move_to(ex1[1]), gen.animate.move_to(ex1[3]))
+        self.play(FadeIn(ex2))
+
+        sub = Text('Subscribe', **fancy, font_size=50).next_to(ex1, UP, buff=0.65)
+        vid = Text('for more videos', **fancy, font_size=50).next_to(ex2, DOWN, buff=0.65)
+
+        self.play(Write(sub))
+        self.play(Write(vid))
