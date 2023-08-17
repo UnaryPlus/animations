@@ -1,7 +1,11 @@
 # WARNING: bad code ahead!
 
+# TODO: check all run times, limits, and make sure I wait until bookmarks
+# TODO: make sure bookmarks are in correct location
+
 from manim import *
 from manim_voiceover import VoiceoverScene
+from manim_voiceover.services.azure import AzureService
 import numpy as np
 import math
 
@@ -15,6 +19,12 @@ yellow = YELLOW_D
 fancy = dict(font='Didot', slant=ITALIC)
 tip_size = lambda x: dict(tip_length=x, tip_width=x)
 sf = 1.4
+
+FADEIN_T = 0.6
+FADEALL_T = 1
+TRANSFORM_T = 0.8
+GROWARROW_T = 1
+WRITE_T = 1.5
 
 def add_bookmarks(text):
     return text.replace('{', '<bookmark mark="').replace('}', '"/>')
@@ -49,112 +59,154 @@ def double_arrow(m1, m2):
 
 class ChainOfFields(VoiceoverScene):
     def construct(self):
-        # self.scene1()
-        # exp_iso = self.scene2()
-        # star_def = self.scene3(exp_iso)
-        # self.scene4(star_def)
-        # self.scene5(star_def)
-        # ops = self.scene6()
-        # fields = self.scene7(ops)
-        # K_1 = self.scene8(fields)
-        # self.scene9(*K_1)
-        # self.scene10()
-        # self.scene11(*K_1)
-        # self.scene12()
+        self.set_speech_service(AzureService(voice="en-US-AriaNeural", style="newscast-casual"))
+
+        self.scene1()
+        exp_iso = self.scene2()
+        star_def = self.scene3(exp_iso)
+        self.scene4(star_def)
+        self.scene5(star_def)
+        ops = self.scene6()
+        fields = self.scene7(ops)
+        K_1 = self.scene8(fields)
+        self.scene9(*K_1)
+        self.scene10()
+        self.scene11(*K_1)
+        self.scene12()
         self.scene13()
 
-    def fade_all(self, *mobjects, reverse=False, lag_ratio=0.05):
+    def fade_all(self, *mobjects, reverse=False, lag_ratio=0.05, **kwargs):
         fade_iter = reversed(mobjects) if reverse else mobjects
-        self.play(AnimationGroup(*[ FadeOut(m) for m in fade_iter ], lag_ratio=lag_ratio))
+        self.play(AnimationGroup(*[ FadeOut(m) for m in fade_iter ], lag_ratio=lag_ratio), **kwargs)
     
-    def fadein_all(self, *mobjects, reverse=False, lag_ratio=0.05):
+    def fadein_all(self, *mobjects, reverse=False, lag_ratio=0.05, **kwargs):
         fade_iter = reversed(mobjects) if reverse else mobjects
-        self.play(AnimationGroup(*[ FadeIn(m) for m in fade_iter ], lag_ratio=lag_ratio))
+        self.play(AnimationGroup(*[ FadeIn(m) for m in fade_iter ], lag_ratio=lag_ratio), **kwargs)
     
     def scene1(self): 
-        owen = SVGMobject('assets/owen.svg').scale(2.5).to_corner(DL, buff=0)
-        me = Text('me', **fancy, font_size=50, color=blue).shift(UP * 2.4 + LEFT * 4.4)
-        arrow = Arrow(me.get_bottom(), owen.get_top(), buff=0.2, color=blue)
+        ###############
+        ### SCENE 1 ###
+        ###############
 
-        c_start = owen.get_corner(UR) + DOWN * 0.6 + LEFT * 0.95
-        c_direction = UP * 0.25 + RIGHT
-        circles = circle_chain(start=c_start, direction=c_direction, buff=0.3, start_radius=0.2, delta_radius=0.1, n=3, color=red)
-        circles.append(Ellipse(width=6, height=4, color=red).next_to(circles[-1], RIGHT, buff=0.3))
- 
-        self.play(DrawBorderThenFill(owen))
-        self.play(FadeIn(me), GrowArrow(arrow, point_color=BLACK))
-        self.play(AnimationGroup(*[ FadeIn(c) for c in circles ], lag_ratio=0.2))
+        text = add_bookmarks("""
+        This story began some years ago when I was pondering a question concerning {bin} binary operations, 
+        {ops} operations that {two} take two inputs and {one} produce one output. The two basic binary operations 
+        in math are {add} addition and {mul} multiplication, and together these satisfy the distributive property, namely 
+        {distr1} A times X plus Y equals A X plus A Y and {distr2} A plus B times X equals A X plus B X. I wondered 
+        whether it was possible to define {ques} a third operation that distributes over multiplication just as multiplication 
+        distributes over addition. Specifically, if one denotes this hypothetical operation with a {star} star, the goal is to define 
+        it such that {props} these two properties hold.
+        """)
 
-        bop = Text('binary operations', **fancy, font_size=50, color=red, stroke_color=red).move_to(circles[-1])
-        self.play(Write(bop))
+        with self.voiceover(text) as tracker:
 
-        node = Circle(radius=0.15, color=blue).next_to(bop, UP, buff=0.5).shift(RIGHT * 0.3)
-        input1 = Arrow(node.get_corner(UL) + LEFT + UP * 0.3, node.get_corner(UL), buff=0.1, color=blue)
-        input2 = Arrow(node.get_corner(DL) + LEFT + DOWN * 0.3, node.get_corner(DL), buff=0.1, color=blue)
-        output = Arrow(node.get_right(), node.get_right() + RIGHT * 1.1, buff=0.15, color=blue)
+            owen = SVGMobject('assets/owen.svg').scale(2.5).to_corner(DL, buff=0)
+            me = Text('me', **fancy, font_size=50, color=blue).shift(UP * 2.4 + LEFT * 4.4)
+            arrow = Arrow(me.get_bottom(), owen.get_top(), buff=0.2, color=blue)
 
-        self.play(FadeIn(node))
-        self.play(GrowArrow(input1, point_color=BLACK), GrowArrow(input2, point_color=BLACK))
-        self.play(GrowArrow(output, point_color=BLACK))
+            c_start = owen.get_corner(UR) + DOWN * 0.6 + LEFT * 0.95
+            c_direction = UP * 0.25 + RIGHT
+            circles = circle_chain(start=c_start, direction=c_direction, buff=0.3, start_radius=0.2, delta_radius=0.1, n=3, color=red)
+            circles.append(Ellipse(width=6, height=4, color=red).next_to(circles[-1], RIGHT, buff=0.3))
+    
+            t = tracker.time_until_bookmark('bin')
+            self.play(DrawBorderThenFill(owen), run_time=(t * 0.45))
+            self.play(FadeIn(me), GrowArrow(arrow, point_color=BLACK), run_time=(t * 0.2))
+            self.play(AnimationGroup(*[ FadeIn(c) for c in circles ], lag_ratio=0.2), run_time=tracker.time_until_bookmark('bin'))
 
-        mul = MathTex('\cdot', font_size=125, color=blue).next_to(bop, DOWN, buff=0.45)
-        add = MathTex('+', font_size=75, color=blue).next_to(mul, LEFT, buff=1)
-        self.play(FadeIn(add))
-        self.play(FadeIn(mul))
+            bop = Text('binary operations', **fancy, font_size=50, color=red, stroke_color=red).move_to(circles[-1])
+            self.play(Write(bop), run_time=tracker.time_until_bookmark('ops', limit=WRITE_T))
+            self.wait_until_bookmark('ops')
 
-        distr1 = MathTex('a {{\cdot}} (x {{+}} y) = (a {{\cdot}} x) {{+}} (a {{\cdot}} y)', font_size=50, color=blue).next_to(circles[-1], DOWN, buff=0.5).shift(LEFT * 1.2)
-        distr2 = MathTex('(a {{+}} b) {{\cdot}} x = (a {{\cdot}} x) {{+}} (b {{\cdot}} x)', font_size=50, color=blue).next_to(distr1, DOWN, buff=0.5)
-        self.play(FadeIn(distr1))
-        self.play(FadeIn(distr2))
+            node = Circle(radius=0.15, color=blue).next_to(bop, UP, buff=0.5).shift(RIGHT * 0.3)
+            input1 = Arrow(node.get_corner(UL) + LEFT + UP * 0.3, node.get_corner(UL), buff=0.1, color=blue)
+            input2 = Arrow(node.get_corner(DL) + LEFT + DOWN * 0.3, node.get_corner(DL), buff=0.1, color=blue)
+            output = Arrow(node.get_right(), node.get_right() + RIGHT * 1.1, buff=0.15, color=blue)
 
-        ques = MathTex('?', font_size=75, color=green).next_to(mul, RIGHT, buff=1)
-        star = MathTex('\star', font_size=75, color=green).move_to(ques)
-        self.play(FadeIn(ques))
-        self.play(ReplacementTransform(ques, star))
+            self.play(FadeIn(node), run_time=tracker.time_until_bookmark('two', limit=FADEIN_T))
+            self.wait_until_bookmark('two')
+            self.play(GrowArrow(input1, point_color=BLACK), GrowArrow(input2, point_color=BLACK), run_time=tracker.time_until_bookmark('one', limit=GROWARROW_T))
+            self.wait_until_bookmark('one')
+            self.play(GrowArrow(output, point_color=BLACK), run_time=GROWARROW_T)
 
-        distr1_star = MathTex('a {{\star}} (x {{\cdot}} y) = (a {{\star}} x) {{\cdot}} (a {{\star}} y)', font_size=50, color=blue).move_to(distr1)
-        distr2_star = MathTex('(a {{\cdot}} b) {{\star}} x = (a {{\star}} x) {{\cdot}} (b {{\star}} x)', font_size=50, color=blue).move_to(distr2)
-        distr1_star.get_parts_by_tex('\star').set_color(green)
-        distr2_star.get_parts_by_tex('\star').set_color(green)
-        self.play(ReplacementTransform(distr1, distr1_star), ReplacementTransform(distr2, distr2_star))
+            mul = MathTex('\cdot', font_size=125, color=blue).next_to(bop, DOWN, buff=0.45)
+            add = MathTex('+', font_size=75, color=blue).next_to(mul, LEFT, buff=1)
+            self.wait_until_bookmark('add')
+            self.play(FadeIn(add), run_time=tracker.time_until_bookmark('mul', limit=FADEIN_T))
+            self.wait_until_bookmark('mul')
+            self.play(FadeIn(mul), run_time=FADEIN_T)
 
-        self.fade_all(owen, me, arrow, *circles, bop, node, input1, input2, output, add, mul, star, reverse=True)
+            distr1 = MathTex('a {{\cdot}} (x {{+}} y) = (a {{\cdot}} x) {{+}} (a {{\cdot}} y)', font_size=50, color=blue).next_to(circles[-1], DOWN, buff=0.5).shift(LEFT * 1.2)
+            distr2 = MathTex('(a {{+}} b) {{\cdot}} x = (a {{\cdot}} x) {{+}} (b {{\cdot}} x)', font_size=50, color=blue).next_to(distr1, DOWN, buff=0.5)
+            self.wait_until_bookmark('distr1')
+            self.play(FadeIn(distr1), run_time=tracker.time_until_bookmark('distr2', limit=FADEIN_T))
+            self.wait_until_bookmark('distr2')
+            self.play(FadeIn(distr2), run_time=FADEIN_T)
 
-        star_exp = MathTex('x {{\star}} y = x^y?', font_size=50, color=blue).to_edge(UP, buff=1)
-        star_exp.get_parts_by_tex('\star').set_color(green)
-        self.play(FadeIn(star_exp))            
+            ques = MathTex('?', font_size=75, color=green).next_to(mul, RIGHT, buff=1)
+            star = MathTex('\star', font_size=75, color=green).move_to(ques)
+            self.wait_until_bookmark('ques')
+            self.play(FadeIn(ques), run_time=FADEIN_T)
+            self.wait_until_bookmark('star')
+            self.play(ReplacementTransform(ques, star), run_time=TRANSFORM_T)
 
-        rep_add = MathTex('x \cdot n', '= \\underbrace{x + \dots + x}_{n \\text{ copies}}', color=red).to_edge(LEFT, buff=2).shift(UP, 0.15)
-        rep_mul = MathTex('x^n', '= \\underbrace{x \cdot \dots \cdot x}_{n \\text{ copies}}', color=red).next_to(rep_add, DOWN, buff=0.25)
-        self.play(FadeIn(rep_add[0], rep_mul[0]))
-        self.play(FadeIn(rep_add[1]))
-        self.play(FadeIn(rep_mul[1]))
+            distr1_star = MathTex('a {{\star}} (x {{\cdot}} y) = (a {{\star}} x) {{\cdot}} (a {{\star}} y)', font_size=50, color=blue).move_to(distr1)
+            distr2_star = MathTex('(a {{\cdot}} b) {{\star}} x = (a {{\star}} x) {{\cdot}} (b {{\star}} x)', font_size=50, color=blue).move_to(distr2)
+            distr1_star.get_parts_by_tex('\star').set_color(green)
+            distr2_star.get_parts_by_tex('\star').set_color(green)
+            self.wait_until_bookmark('props')
+            self.play(ReplacementTransform(distr1, distr1_star), ReplacementTransform(distr2, distr2_star), run_time=TRANSFORM_T)
 
-        self.play(FadeOut(rep_add, rep_mul))
+        self.fade_all(owen, me, arrow, *circles, bop, node, input1, input2, output, add, mul, star, reverse=True, run_time=FADEALL_T)
+        
+        text = add_bookmarks("""
+        An obvious first candidate is {exp} exponentiation, since there’s a way in which the relationship between exponentiation 
+        and multiplication is the same as that between multiplication and addition, namely when  one of the inputs is a 
+        natural number, then multiplication is the same as repeated addition and exponentiation is repeated multiplication.
+        """)
 
-        box1 = SurroundingRectangle(distr1_star, color=yellow, buff=0.1)
-        box2 = SurroundingRectangle(distr2_star, color=yellow, buff=0.1)
-        distr1_exp = MathTex('a^{xy}', '\\neq', 'a^x a^y', font_size=50, color=blue).next_to(star_exp, DOWN, buff=0.5)
-        distr2_exp = MathTex('(ab)^x = a^x b^x', font_size=50, color=blue).next_to(distr1_exp, DOWN, buff=0.5)
-        distr1_exp[1].set_color(red)
+        with self.voiceover(text) as tracker:
 
-        self.play(Create(box2))
-        self.play(FadeIn(distr2_exp))
-        self.play(ReplacementTransform(box2, box1))
-        self.play(FadeIn(distr1_exp))
+            star_exp = MathTex('x {{\star}} y = x^y?', font_size=50, color=blue).to_edge(UP, buff=1)
+            star_exp.get_parts_by_tex('\star').set_color(green)
+            self.wait_until_bookmark('exp')
+            self.play(FadeIn(star_exp), run_time=FADEIN_T)            
 
-        strike = Line(star_exp.get_left(), star_exp.get_right(), color=red)
-        self.play(GrowFromPoint(strike, strike.get_start()))
+            rep_add = MathTex('x \cdot n', '= \\underbrace{x + \dots + x}_{n \\text{ copies}}', color=red).to_edge(LEFT, buff=2).shift(UP, 0.15)
+            rep_mul = MathTex('x^n', '= \\underbrace{x \cdot \dots \cdot x}_{n \\text{ copies}}', color=red).next_to(rep_add, DOWN, buff=0.25)
+            self.play(FadeIn(rep_add[0], rep_mul[0]))
+            self.play(FadeIn(rep_add[1]))
+            self.play(FadeIn(rep_mul[1]))
 
-        self.fade_all(box1, distr2_exp, distr1_exp, star_exp, strike)
+            self.play(FadeOut(rep_add, rep_mul))
 
-        chal = Text('Try it yourself:', **fancy, font_size=50).shift(UP)
-        laws = VGroup(distr1_star, distr2_star)
-        self.play(FadeIn(chal), laws.animate.next_to(chal, DOWN, buff=0.5))
+            box1 = SurroundingRectangle(distr1_star, color=yellow, buff=0.1)
+            box2 = SurroundingRectangle(distr2_star, color=yellow, buff=0.1)
+            distr1_exp = MathTex('a^{xy}', '\\neq', 'a^x a^y', font_size=50, color=blue).next_to(star_exp, DOWN, buff=0.5)
+            distr2_exp = MathTex('(ab)^x = a^x b^x', font_size=50, color=blue).next_to(distr1_exp, DOWN, buff=0.5)
+            distr1_exp[1].set_color(red)
 
-        self.play(FadeOut(chal, laws))
+            self.play(Create(box2))
+            self.play(FadeIn(distr2_exp))
+            self.play(ReplacementTransform(box2, box1))
+            self.play(FadeIn(distr1_exp))
+
+            strike = Line(star_exp.get_left(), star_exp.get_right(), color=red)
+            self.play(GrowFromPoint(strike, strike.get_start()))
+
+            self.fade_all(box1, distr2_exp, distr1_exp, star_exp, strike)
+
+            chal = Text('Try it yourself:', **fancy, font_size=50).shift(UP)
+            laws = VGroup(distr1_star, distr2_star)
+            self.play(FadeIn(chal), laws.animate.next_to(chal, DOWN, buff=0.5))
+
+            self.play(FadeOut(chal, laws))
     
     def scene2(self):
+        ###############
+        ### SCENE 2 ###
+        ###############
+
         exp = Text('exponential function', **fancy, font_size=50).to_edge(UP, buff=1)
         nots = MathTex('e^x', '\quad \exp x', font_size=60, color=blue).next_to(exp, DOWN, buff=0.5)
         strike = Line(nots[0].get_left(), nots[0].get_right(), color=red).shift(DOWN * 0.1 + LEFT * 0.05)
@@ -242,6 +294,10 @@ class ChainOfFields(VoiceoverScene):
         return conj
 
     def scene3(self, exp_iso):
+        ###############
+        ### SCENE 3 ###
+        ###############
+
         line2 = Tex('isomorphic operations have \\textit{the same structure}', font_size=50)
         line1 = Tex('$+$ and $\cdot_{(\\text{pos.})}$ are isomorphic', font_size=50, color=blue).next_to(line2, UP, buff=0.5)
         
@@ -307,6 +363,10 @@ class ChainOfFields(VoiceoverScene):
         return star_def5
 
     def scene4(self, star_def):
+        ###############
+        ### SCENE 4 ###
+        ###############
+
         self.play(star_def.animate.set_font_size(60).to_edge(UP, buff=1))
 
         proof1_tex = """
@@ -405,6 +465,10 @@ class ChainOfFields(VoiceoverScene):
             VGroup(mul_comm, star_comm), VGroup(mul_head, star_head), table)
     
     def scene5(self, star_def):
+        ###############
+        ### SCENE 5 ###
+        ###############
+
         eq = MathTex('y = x \star a', '= x^z', color=red, font_size=50)
         eq.shift(-eq[0].get_center() + UP * 1.5)
 
@@ -460,6 +524,10 @@ class ChainOfFields(VoiceoverScene):
         self.fade_all(star_def, VGroup(axes, curve), eq, VGroup(a, a_z), exp_def, star_exp)
     
     def scene6(self):
+        ###############
+        ### SCENE 6 ###
+        ###############
+
         add = MathTex('+', font_size=75, color=green)
         mul = MathTex('\cdot', font_size=125, color=green)
         star = MathTex('\star', font_size=75, color=green)
@@ -536,6 +604,10 @@ class ChainOfFields(VoiceoverScene):
         return ops
     
     def scene7(self, ops):
+        ###############
+        ### SCENE 7 ###
+        ###############
+
         dot_n = MathTex('\cdot', '_n', font_size=125, color=blue).shift(LEFT * 3.5)
         self.play(FadeIn(dot_n[0]))
         self.play(FadeIn(dot_n[1]))
@@ -736,6 +808,10 @@ class ChainOfFields(VoiceoverScene):
         return fields
 
     def scene8(self, fields):
+        ###############
+        ### SCENE 8 ###
+        ###############
+
         plus = [ MathTex('+_' + str(i), font_size=50, color=blue) for i in range(5) ]
         dots = [ MathTex('\cdot_' + str(i), font_size=50, color=blue) for i in range(5) ]
         plus.append(MathTex('\\vdots', font_size=50, color=blue))
@@ -954,6 +1030,10 @@ class ChainOfFields(VoiceoverScene):
         return K_1, top, log0, minf, bottom
 
     def scene9(self, K_1, top, log0, minf, bottom):
+        ###############
+        ### SCENE 9 ###
+        ###############
+
         lhs = MathTex('x {{\cdot}} y =', font_size=50)
         
         rhs_tex = [ 
@@ -1085,6 +1165,10 @@ class ChainOfFields(VoiceoverScene):
         self.fade_all(dotn_def, plus_1, VGroup(lhs2, rhs3))
     
     def scene10(self):
+        ################
+        ### SCENE 10 ###
+        ################
+
         table = VGroup(
             MathTex('K_{-1}', font_size=50, color=green), MathTex('+_{-1}', font_size=50, color=blue), MathTex('\cdot_{-1}', font_size=50, color=blue),
             MathTex('K_0', font_size=50, color=green), MathTex('+_0', font_size=50, color=blue), MathTex('\cdot_0', font_size=50, color=blue),
@@ -1122,6 +1206,10 @@ class ChainOfFields(VoiceoverScene):
         self.play(FadeOut(*self.get_top_level_mobjects()))
 
     def scene11(self, K_1, top, log0, minf, bottom):
+        ################
+        ### SCENE 11 ###
+        ################
+
         minf = MathTex('\log(0)', color=purple).next_to(log0, RIGHT, buff=(0.15 * sf))
         self.play(FadeIn(K_1, top, log0, minf, bottom))
 
@@ -1350,6 +1438,10 @@ class ChainOfFields(VoiceoverScene):
             *[ VGroup(ks[i], kls[i]) for i in range(len(ks)) ])
     
     def scene12(self):
+        ################
+        ### SCENE 12 ###
+        ################
+
         eq1 = MathTex('\mathrm{E}', '\supset K_n', font_size=50)
         eq2 = MathTex('\cdots \supset K_{-2} \supset K_{-1} \supset K_0 \supset K_1 \supset K_2 \supset \cdots', font_size=50)
         eq3 = MathTex('K_0 = \mathbb{R}', '\qquad K_n = \{ \exp^n x \ |\  x \in \mathbb{R} \}', font_size=50)
@@ -1386,6 +1478,10 @@ class ChainOfFields(VoiceoverScene):
         self.fade_all(plusn_def, dotn_def, plus_dot, distr, chain)
     
     def scene13(self):
+        ################
+        ### SCENE 13 ###
+        ################
+
         f = MathTex('f : \mathrm{E} \\to \mathbb{R}', font_size=50, color=blue)
         map_0 = MathTex('f(0) = 0', font_size=50, color=blue) 
         map_1 = MathTex('f(1) = 1', font_size=50, color=blue)
