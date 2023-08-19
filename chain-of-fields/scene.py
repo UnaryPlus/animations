@@ -1,11 +1,9 @@
 # WARNING: bad code ahead!
 
-# TODO: check all run times, limits, and make sure I wait until bookmarks
-# TODO: make sure bookmarks are in correct location
-
 from manim import *
 from manim_voiceover import VoiceoverScene
 from manim_voiceover.services.azure import AzureService
+# from manim_voiceover.services.recorder import RecorderService
 import numpy as np
 import math
 
@@ -62,7 +60,8 @@ def double_arrow(m1, m2):
 
 class ChainOfFields(VoiceoverScene):
     def setup(self):
-        self.set_speech_service(AzureService(voice="en-US-AriaNeural", style="newscast-casual"))
+        self.set_speech_service(AzureService(voice="en-US-GuyNeural", style="newscast"))
+        # self.set_speech_service(RecorderService())
 
     def fade_all(self, *mobjects, reverse=False, lag_ratio=0.05, **kwargs):
         fade_iter = reversed(mobjects) if reverse else mobjects
@@ -548,7 +547,6 @@ class Scene2_5(ChainOfFields):
             star_root2.get_parts_by_tex('sqrt').set_color(red)
             star_root2[4:].set_color(BLACK)
 
-            self.wait(0) # TODO: change depending on how long I pause
             self.play(FadeIn(table, mul_head, star_head, mul_comm), run_time=FADEIN_T)
             self.wait_until_bookmark('starcomm')
             self.play(FadeIn(star_comm), run_time=FADEIN_T)
@@ -1418,7 +1416,7 @@ class Scene6_11(ChainOfFields):
         text = add_bookmarks("""
         This is the best way to visualize the extended addition operation, {out} but there's a simpler way to {in} define it. If you {new} replace squiggle X with log of minus exp of X, replace the remaining occurrences of X with log of exp of X, do likewise with Y, and then expand the remaining squiggles, you get these horrific expressions. If we simplify them using the rules for log and exp, the minuses all cancel out, and in each case {simplify} we're left with log of exp of X times exp of Y. The case where one of the inputs is minus infinity also fits {formula} this formula, because if we {subst} plug in minus infinity, we get {log0} log of 0 times something, which is {minf} minus infinity. Therefore, our extended addition operation can be defined with {unify} this one formula.
 
-        If you replace exp with {log1} log negative 1 and log with {exp1} exp negative 1, {out2} and recall how we {dotdef} defined all those dot operations, you can see that what I've been calling “extended addition” could also be called {dot1} dot negative 1. We can define {plus1} plus negative 1 in a similar fashion. {fade} So we've succeeded in {tower} extending our tower of operations in the negative direction.
+        If you replace exp with {log1} log negative 1 and log with {exp1} exp negative 1, {out2} and recall how we {dotdef} defined all those dot operations, you can see that what I've been calling “extended addition” could also be called {dot1} dot negative 1. We can define {plus1} plus negative 1 in a similar fashion. {fade} So we've succeeded in {tower} extending this tower of operations in the negative direction.
         """)
 
         with self.voiceover(text) as tracker:
@@ -1543,7 +1541,7 @@ class Scene6_11(ChainOfFields):
         ################
 
         text = add_bookmarks("""
-        But we have the same problem now as we had before. Unlike all the other plus operations, {plusbox} plus negative 1 has no generalization. {outbox} And the problem runs deeper than that. K negative 1 is isomorphic to K 0, because we can go {iso} back and forth between them using exp and log while preserving the structure of the dot and plus operations. K negative 1 might seem like a crazy new number system containing values less than minus infinity, {same} but it's structure is the same as that of the real numbers, it's the real numbers in disguise. K negative 1 is best thought of not as a new number system, but as a relabeling, or alternative presentation, of the reals. Nevertheless, this alternative presentation can give us insight into how we can extend things further. Once we've defined dot N and plus N for {ext} all integers N, we really will have a new number system.
+        But we have the same problem now as we had before. Unlike all the other plus operations, {plusbox} plus negative 1 has no generalization. {outbox} And the problem runs deeper than that. K negative 1 is isomorphic to K 0, because one can go {iso} back and forth between them using exp and log while preserving the structure of the dot and plus operations. K negative 1 might seem like a crazy new number system containing values less than minus infinity, {same} but it's structure is the same as that of the real numbers, it's the real numbers in disguise. K negative 1 is best thought of not as a new number system, but as a relabeling, or alternative presentation, of the reals. Nevertheless, this alternative presentation can give us insight into how we can extend things further. Once we've defined dot N and plus N for {ext} all integers N, we really will have a new number system.
         """)
 
         with self.voiceover(text) as tracker:
@@ -1737,7 +1735,7 @@ class Scene6_11(ChainOfFields):
         )
 
         text = add_bookmarks("""
-        There's an easier way to visual these operations. First, we extend each of these half-lines into a {full} full line. Each point is the log of the point above it, so {lx1} this is the log of {x} this. But {lx2} this is also the log of the red point, so {corr} these two points are equivalent, they represent the same exponential number. {out} There is no longer a one-to-one correspondence between numbers and points; in fact, each number is represented by {inf} infinitely many points. To give you an idea of which points are equivalent, {out2} I'll draw {guides} these guidelines.
+        There's an easier way to visualize these operations. First, we extend each of these half-lines into a {full} full line. Each point is the log of the point above it, so {lx1} this is the log of {x} this. But {lx2} this is also the log of the red point, so {corr} these two points are equivalent, they represent the same exponential number. {out} There is no longer a one-to-one correspondence between numbers and points; in fact, each number is represented by {inf} infinitely many points. To give you an idea of which points are equivalent, {out2} I'll draw {guides} these guidelines.
         """)
 
         with self.voiceover(text) as tracker:
@@ -1907,7 +1905,7 @@ class Scene12_13(ChainOfFields):
         ################
 
         text = add_bookmarks("""
-        So to summarize, we've constructed this set {e} E by extending the real numbers with logs of non-positive numbers, logs of those values, and so on. E contains a subset {kn} K N for each integer N, and these subsets form an {chain} infinite descending chain, with K N plus 1 contained inside K N. {k0} K 0 is the real number line we started with, and {kndef} K N is defined as the set exp N of X for all real numbers X. For example, {kg2def} K negative 2 is the set of logs of logs of real numbers, since exp negative 2 is the same log 2. {out} Each K N has its own versions of addition and multiplication, denoted {plusn} plus N and {dotn} dot N, and these are {def} defined as shown. {rel} Plus N is the same dot N minus 1, when both are defined, and this means that {distr} dot N distributes over dot N minus 1. In other words, we have a {opchain} chain of binary operations, with each distributing over the one before it, and this chain extends infinitely in both directions.
+        So to summarize, we've constructed this set {e} E by extending the real numbers with logs of non-positive numbers, logs of those values, and so on. E contains a subset {kn} K N for each integer N, and these subsets form an {chain} infinite descending chain, with K N plus 1 contained inside K N. {k0} K 0 is the real number line we started with, and {kndef} K N is defined as the set exp N of X for all real numbers X. For example, {kg2def} K negative 2 is the set of logs of logs of real numbers, since exp negative 2 is the same as log 2. {out} Each K N has its own versions of addition and multiplication, denoted {plusn} plus N and {dotn} dot N, and these are {def} defined as shown. {rel} Plus N is the same as dot N minus 1, when both are defined, and this means that {distr} dot N distributes over dot N minus 1. In other words, we have a {opchain} chain of binary operations, with each distributing over the one before it, and this chain extends infinitely in both directions.
         """)
 
         with self.voiceover(text) as tracker:
@@ -1966,7 +1964,7 @@ class Scene12_13(ChainOfFields):
         ################
 
         text = add_bookmarks("""
-        I'll end this video with two exercises for the viewer. First, there is a natural {f} bijection between the exponential numbers and the reals, {map0} mapping 0 to 0, {map1} 1 to 1, {mape} E to 2, {maplog0} log of 0 to minus 1, and in general, {gen} mapping exp N of 0 to N for all integers N. {q1} Find this bijection. {q2} Second, show how E can be defined as a colimit. Leave your answers in the comments, and of course, {sub} to my channel. I'll be posting {more} more videos like this in the future.
+        I'll end this video with two exercises for the viewer. First, there is a natural {f} bijection between the exponential numbers and the reals, {map0} mapping 0 to 0, {map1} 1 to 1, {mape} E to 2, {maplog0} log of 0 to minus 1, and in general, {gen} mapping exp N of 0 to N for all integers N. {q1} Find this bijection. {q2} Second, show how E can be defined as a colimit. Leave your answers in the comments, and of course, {sub} subscribe to my channel. I'll be posting {more} more videos like this in the future.
         """)
 
         with self.voiceover(text) as tracker:
