@@ -2,8 +2,8 @@
 
 from manim import *
 from manim_voiceover import VoiceoverScene
-from manim_voiceover.services.azure import AzureService
-# from manim_voiceover.services.recorder import RecorderService
+# from manim_voiceover.services.azure import AzureService
+from manim_voiceover.services.recorder import RecorderService
 import numpy as np
 import math
 
@@ -60,8 +60,8 @@ def double_arrow(m1, m2):
 
 class ChainOfFields(VoiceoverScene):
     def setup(self):
-        self.set_speech_service(AzureService(voice="en-US-GuyNeural", style="newscast"))
-        # self.set_speech_service(RecorderService())
+        # self.set_speech_service(AzureService(voice="en-US-GuyNeural", style="newscast"))
+        self.set_speech_service(RecorderService())
 
     def fade_all(self, *mobjects, reverse=False, lag_ratio=0.05, **kwargs):
         fade_iter = reversed(mobjects) if reverse else mobjects
