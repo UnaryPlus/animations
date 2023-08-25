@@ -3,7 +3,11 @@
 from manim import *
 from manim_voiceover import VoiceoverScene
 # from manim_voiceover.services.azure import AzureService
-from manim_voiceover.services.recorder import RecorderService
+# from manim_voiceover.services.recorder import RecorderService
+from manim_voiceover.services.base import SpeechService
+from pathlib import Path
+from pydub import AudioSegment
+import shutil
 import numpy as np
 import math
 
@@ -58,10 +62,35 @@ def double_arrow(m1, m2):
     c[1].add_tip(**tip_size(0.27), at_start=True)
     return c
 
+class FileReaderService(SpeechService):
+    def __init__(self, audio_dir):
+        self.audio_dir = Path().resolve() / Path(audio_dir)
+        self.copy_dir = Path().resolve() / Path('media') / Path('voiceovers')
+        self.index = 0
+        SpeechService.__init__(self, transcription_model='base')
+    
+    def generate_from_text(self, text, cache_dir=None, path=None):
+        audio_file = self.audio_dir / Path('a' + str(self.index) + '.m4a')
+        copy_file = self.copy_dir / Path('a' + str(self.index) + '.mp3')
+        
+        m4a = AudioSegment.from_file(audio_file, format='m4a')
+        m4a.export(copy_file, format='mp3')
+
+        print('>>>', 'copied to', copy_file)
+    
+        json_dict = {
+            'input_text': text,
+            'original_audio': 'a' + str(self.index) + '.mp3',
+        }
+
+        self.index += 1
+        return json_dict 
+
 class ChainOfFields(VoiceoverScene):
     def setup(self):
         # self.set_speech_service(AzureService(voice="en-US-GuyNeural", style="newscast"))
-        self.set_speech_service(RecorderService())
+        # self.set_speech_service(RecorderService())
+        self.set_speech_service(FileReaderService(self.audio_dir))
 
     def fade_all(self, *mobjects, reverse=False, lag_ratio=0.05, **kwargs):
         fade_iter = reversed(mobjects) if reverse else mobjects
@@ -72,6 +101,8 @@ class ChainOfFields(VoiceoverScene):
         self.play(AnimationGroup(*[ FadeIn(m) for m in fade_iter ], lag_ratio=lag_ratio), **kwargs)
 
 class Scene1(ChainOfFields):
+    audio_dir = 'assets/audio/Scene1'
+
     def construct(self):
 
         ###############
@@ -90,7 +121,7 @@ class Scene1(ChainOfFields):
 
         with self.voiceover(text) as tracker:
 
-            owen = SVGMobject('assets/owen.svg').scale(2.5).to_corner(DL, buff=0)
+            owen = SVGMobject('assets/images/owen.svg').scale(2.5).to_corner(DL, buff=0)
             me = Text('me', **fancy, font_size=50, color=blue).shift(UP * 2.4 + LEFT * 4.4)
             arrow = Arrow(me.get_bottom(), owen.get_top(), buff=0.2, color=blue)
 
@@ -211,6 +242,8 @@ class Scene1(ChainOfFields):
         self.play(FadeOut(chal, laws), run_time=FADEALL_T)
     
 class Scene2_5(ChainOfFields):
+    audio_dir = 'assets/audio/Scene2_5'
+
     def construct(self):
 
         ###############
@@ -581,7 +614,16 @@ class Scene2_5(ChainOfFields):
         star_def = self.star_def
 
         text = add_bookmarks("""
-        If you want to see what the star operation looks like on a graph, {graph} here is a graph of X star A, {vary} with A varying over time. You can see that when {ainv} A is 1 over E, the function is {xinv} 1 over X, {a0} when A is 1, the function is {x0} just 1, {a1} when A is E it's {x1} X, and {a2} when A is E squared it's {x2} X squared. Why is this? {out} Well, in calculus, it's common to define exponentiation as {expdef} X to the Y equals exp of log X times Y. If you compare this definition to {stardef} the definition of star, you can see that X star A is equal to X to the log of A. {new} So if A equals {aez} E to the Z, then X star A equals {sxz} X to the Z.
+        If you want to see what the star operation looks like on a graph, 
+        {graph} here is a graph of X star A, {vary} with A varying over time. 
+        You can see that when {ainv} A is 1 over E, the function {xinv} is 1 over X, 
+        {a0} when A is 1, the function {x0} is just 1, {a1} when A is E {x1} it's X, 
+        and {a2} when A is E squared {x2} it's X squared. Why is this? {out} 
+        Well, in calculus, it's common to define exponentiation as {expdef} 
+        X to the Y equals exp of log X times Y. If you compare this definition to
+        {stardef} the definition of star, you can see that X star A is equal to X 
+        to the log of A. {new} So if A equals {aez} E to the Z, then X star A equals 
+        {sxz} X to the Z.
         """)
 
         with self.voiceover(text) as tracker:
@@ -658,14 +700,28 @@ class Scene2_5(ChainOfFields):
         self.fade_all(star_def, VGroup(axes, curve), eq, VGroup(a, a_z), exp_def, star_exp, run_time=FADEALL_T)
 
 class Scene6_11(ChainOfFields):
+    audio_dir = 'assets/audio/Scene6_11'
+
     def construct(self):
             
         ###############
         ### SCENE 6 ###
         ###############
 
-        text = add_bookmarks("""
-        As of yet, we have three binary operations: the standard operations of {addmul} addition and multiplication, and this new {star} star operation. {table} The first two are defined for {real} all numbers, but the last is only defined for {pos} positive numbers. And these operations form a kind of chain where {distrmul} multiplication distributes over addition, and {distrstar} star distributes over multiplication. {up} It turns out that we can extend this chain into an {inf} infinite sequence of binary operations, with each distributing over the one before it. I'll call the next operation in this sequence {dia} diamond. {left} Just as {stardef} X star Y is exp of log of X times log of Y, {diadef} X diamond Y is defined as exp of log of X star log of Y, which you can expand to {expand} exp exp of log log of X times log log of Y. This is defined for {domain} all numbers greater than 1, distributes over star, and, just like star, inherits all the properties of multiplication. For example, {dia0} X diamond E equals E and {dia1} X diamond E to the E equals X, so E acts like 0 and E to the E acts like 1.
+        # bookmarks messed up because of weird transcription
+        text = add_bookmarks(""" 
+        As of yet, we have three binary operations: the standard operations of {addmul} addition and multiplication, 
+        and this new {star} star operation. {table} The first two are defined for {real} all numbers, 
+        but the last is only defined for {pos} positive numbers. And these operations form a kind of 
+        chain where {distrmul} multiplication distributes over addition, and {distrstar} star distributes 
+        over multiplication. {up} It turns out that we can extend this chain into an {inf} infinite 
+        sequence of binary operations, with each distributing over the one before it. I'll call the next 
+        operation in this {dia} sequence diamond. {left} Just as {stardef} X star Y is exp of log of X times 
+        log of {diadef} Y, X diamond Y is defined as exp of log of X star log of Y, which you can {expand} expand to 
+        exp exp of log log of X times log log of Y. This is defined for {domain} all numbers greater 
+        than 1, distributes over star, and, just like star, inherits all the properties of multiplication. 
+        {dia0} For example, X diamond E equals E and {dia1} X diamond E to the E equals X, so E acts like 
+        0 and E to the E acts like 1.
         """)
 
         with self.voiceover(text) as tracker:
@@ -769,9 +825,20 @@ class Scene6_11(ChainOfFields):
         ops = self.ops
 
         text = add_bookmarks("""
-        Before we continue, it's a good idea to systematically name these operations. I'll use a {dot} dot symbol, like I've been using for multiplication, but with a {sub} subscript added. {dot0} So dot 0 means multiplication, {dot1} dot 1 is the same as star, {dot2} dot 2 is diamond, and so on. {out} And to avoid having to write {many} log so many times in a row, I'll use {sup} superscripts for repeated application, so {log2} log 2 of X means log of log of X, {log3} log 3 of X means log of log of log of X, and so on. And I'll do the {exp} same with exp. Here are {out2} the definitions of {defs} star and diamond written in this new notation. Now we can define the rest of the operations all at once. {dotn} The dot N operation takes two numbers X and Y, applies log N times, multiplies the results, and then applies exp N times. {fade}
+        Before we continue, it's a good idea to systematically name these operations. I'll use a {dot} dot symbol, 
+        like I've been using for multiplication, but with a {sub} subscript added. {dot0} So dot 0 means multiplication, 
+        {dot1} dot 1 is the same as star, {dot2} dot 2 is diamond, and so on. {out} And to avoid having to write {many} 
+        log so many times in a row, I'll use {sup} superscripts for repeated application, so {log2} log 2 of X means log 
+        of log of X, {log3} log 3 of X means log of log of log of X, and so on. And I'll do the {exp} same with exp. 
+        Here are {out2} the definitions of {defs} star and diamond written in this new notation. Now we can define the 
+        rest of the operations all at once. {dotn} The dot N operation takes two numbers X and Y, applies log N times, 
+        multiplies the results, and then applies exp N times. {fade}
 
-        Whenever you define a new operation, it's important to know what its {dom} domain is, what inputs it accepts. In the case of dot N, the only thing that could restrict the domain is this {logbox} repeated application of log, because {movebox} exp and multiplication both have unrestricted domains, they can work with any real numbers, so we don't need to worry about them. {outbox} So the domain of {domeq} dot N is the same as the domain of log N.
+        Whenever you define a new operation, it's important to know what its {dom} domain is, what inputs it accepts. 
+        In the case of dot N, the only thing that could restrict the domain is this {logbox} repeated application of 
+        log, because {movebox} exp and multiplication both have unrestricted domains, they can work with any real 
+        numbers, so we don't need to worry about them. {outbox} So the domain of {domeq} dot N is the same as the 
+        domain of log N.
         """)
 
         with self.voiceover(text) as tracker:
@@ -850,8 +917,25 @@ class Scene6_11(ChainOfFields):
             self.wait_until_bookmark('domeq')
             self.play(FadeIn(doms), run_time=FADEIN_T)
         
+        # bookmarks messed up because of weird transcription
         text = add_bookmarks("""
-        Log 0 does nothing with its input, it applies log zero times, so {dom0} its domain is the entire number line. {out} To work out the rest, we can use the fact that log and exp are inverses, which implies that the {domrange} domain of log N is the same as the range of exp N, the set of possible outputs of exp N. {line} If we apply exp {apply1} once the outputs are {range1} all numbers greater than 0. If we apply it {apply2} again, 0 gets mapped to 1, and since exp is an increasing function, anything greater than 0 will map to something greater than 1, so the range of exp 2 consists of {range2} all numbers greater than 1. Likewise, the {apply3} range of exp 3 is {range3} all numbers greater than exp of 1, the {apply4} range of exp 4 is {range4} all numbers greater than exp of exp of 1 or exp 2 of 1, and so on. {move} If we write these {bounds} lower bounds using the e notation, we find they're equal to {e} E, E to the E, {eee} E to the E to the E, and so on. As you might imagine, this sequence grows very, very quickly. E to the E to the E is {mil} approximately 4 million, and the {eeee} next value in the sequence is too large to represent on a computer, but I worked out that it's {digits} about 1.65 million digits long to the left of the decimal point. This means that the dot 6 operation only works on numbers with more than 1.65 million digits. Not very practical, I must admit.
+        Log 0 does nothing with its input, it applies log zero times, 
+        so {dom0} its domain is the entire number line. 
+        {out} To work out the rest, we can use the fact that log and exp are inverses, 
+        which implies that the {domrange} domain of log N is the same as the range of exp N, 
+        the set of possible outputs of exp N. {line} If we apply exp {apply1} once the outputs are 
+        {range1} all numbers greater than 0. If we apply it {apply2} again, 0 gets mapped to 1, 
+        and since exp is an increasing function, anything greater than 0 will map to something
+        greater than 1, so the range of exp 2 consists of {range2} all numbers greater than 1. 
+        Likewise, the {apply3} range of exp 3 is {range3} all numbers greater than exp of 1, 
+        the {apply4} range of exp 4 is {range4} all numbers greater than exp of exp of 1 
+        or exp 2 of 1, and so on. {move} If we write these {bounds} lower bounds using 
+        the e notation, we find they're equal to {e} E, E to the E, {eee} E to the E to the E, 
+        and so on. As you might imagine, this sequence grows very, very quickly. 
+        E to the E to the E is {mil} approximately 4 million, and the {eeee} next value in the sequence is too 
+        large to represent on a computer, but I worked out that it's {digits} about 1.65 million 
+        digits long to the left of the decimal point. This means that the dot 6 operation only 
+        works on numbers with more than 1.65 million digits. Not very practical, I must admit.
         """)
 
         with self.voiceover(text) as tracker:
@@ -916,27 +1000,27 @@ class Scene6_11(ChainOfFields):
             vdots = MathTex('\\vdots', font_size=50, color=blue)
             VGroup(dom0, dom1, dom2, dom3, dom4, vdots).arrange(DOWN, buff=0.4)
 
-            self.wait_until_bookmark('move')
+            self.wait(3.5) # self.wait_until_bookmark('move')
             self.play( 
                 FadeOut(dotn_def, dom, log_exp, line), 
                 ReplacementTransform(dom_log0, dom0), ReplacementTransform(range1, dom1), 
                 ReplacementTransform(range2, dom2), ReplacementTransform(range3, dom3), 
                 ReplacementTransform(range4, dom4), FadeIn(vdots), run_time=MOVE_T)
 
-            self.wait_until_bookmark('bounds')
+            # self.wait_until_bookmark('bounds')
             self.play(VGroup(dom3[2], dom4[2]).animate.set_color(red), run_time=FADEIN_T)
             dom3_e = MathTex('{{\mathrm{range}(\exp^3)}} = \{x > {{e}}\}', font_size=50, color=blue).move_to(dom3)
             dom4_e = MathTex('{{\mathrm{range}(\exp^4)}} = \{x > {{e^e}}\}', font_size=50, color=blue).move_to(dom4)
             dom3_e[2].set_color(red)
             dom4_e[2].set_color(red)
-            self.wait_until_bookmark('e')
+            self.wait(2.5) # self.wait_until_bookmark('e')
             self.play(ReplacementTransform(dom3, dom3_e), ReplacementTransform(dom4, dom4_e), run_time=TRANSFORM_T)
 
             dom5 = MathTex('{{\mathrm{range}(\exp^5)}} = \{x > {{e^{e^e}}}\}', font_size=50, color=blue)
             dom5[2].set_color(red)
             doms = VGroup(dom0.copy(), dom1.copy(), dom2.copy(), dom3_e.copy(), dom4_e.copy(), dom5, vdots.copy())
             doms.arrange(DOWN, buff=0.4)
-            self.wait_until_bookmark('eee')
+            self.wait(0.5) # self.wait_until_bookmark('eee')
             self.play(
                 ReplacementTransform(dom0, doms[0]), 
                 ReplacementTransform(dom1, doms[1]),
@@ -948,12 +1032,12 @@ class Scene6_11(ChainOfFields):
         
             mil = MathTex('\\approx 3.81 \\text{ million}', font_size=50, color=red)
             mil.next_to(dom5[-1], RIGHT, buff=0.25)
-            self.wait_until_bookmark('mil')
+            self.wait(7.5) # self.wait_until_bookmark('mil')
             self.play(FadeIn(mil), run_time=FADEIN_T)
 
             dom6 = MathTex('{{\mathrm{range}(\exp^6)}} = \{x > {{e^{e^{e^e}}}}\}', font_size=50, color=blue).next_to(dom5, DOWN, buff=0.3)
             dom6[2].set_color(red)
-            self.wait_until_bookmark('eeee')
+            self.wait(0.75) # self.wait_until_bookmark('eeee')
             self.play(FadeIn(dom6), doms[6].animate.shift(DOWN * 2), run_time=MOVE_T)
 
             digits = Tex('1.65 million digits!}', font_size=40)
@@ -962,9 +1046,16 @@ class Scene6_11(ChainOfFields):
             self.play(FadeIn(digits), run_time=FADEIN_T)
         
         self.play(FadeOut(mil, digits), run_time=FADEOUT_T)
-
+    
         text = add_bookmarks("""
-        So we've worked out the {dotdom} domains of all the dot N operations. I'll write these as {kn} K N, so {k0} K 0 is the entire number line, {k1} K 1 is the set of positive numbers, {etc} and so on. And I'm going to introduce {left} another notation as well. Just as we defined {dotn} X dot N Y as exp N of log N of X times log N of Y, I'm going to define {plusn} X plus N Y as exp N of log N of X plus log N of Y. This doesn't really add anything new, because {restr} plus N is just a more restricted version of dot N minus 1. For example, {plus1} plus 1 is the same as multiplication, but only works on positive numbers. Nevertheless, this can be a useful notation to have.
+        So we've worked out the {dotdom} domains of all the dot N operations. 
+        I'll write these as {kn} K N, so {k0} K 0 is the entire number line, {k1} K 1 is the set of 
+        positive numbers, {etc} and so on. And I'm going to introduce {left} another notation as well. 
+        Just as we defined {dotn} X dot N Y as exp N of log N of X times log N of Y, I'm going to define 
+        {plusn} X plus N Y as exp N of log N of X plus log N of Y. This doesn't really add anything new, 
+        because {restr} plus N is just a more restricted version of dot N minus 1. For example, 
+        {plus1} plus 1 is the same as multiplication, but only works on positive numbers. 
+        Nevertheless, this can be a useful notation to have.
         """)
 
         with self.voiceover(text) as tracker:
@@ -1045,9 +1136,20 @@ class Scene6_11(ChainOfFields):
         fields = self.fields
 
         text = add_bookmarks("""
-        You can think of K N as a smaller copy of the real numbers hidden within the real numbers. It has two operations defined on it, {plus} plus N and {dot} dot N, and these operations obey {props} all the properties of normal addition and multiplication, but with {0box} 0 replaced by exp N of 0 and {1box} 1 replaced by exp N of 1. {outbox1} And these smaller copies of the real numbers are related to each other in two ways. First of all, {eqs} the dot operation of one copy is the same as the plus operation of the next, and second of all, you can go from {exp} K N to K N plus 1 using exp and go the {log} other way using log, and these two functions are isomorphisms.
+        You can think of K N as a smaller copy of the real numbers hidden within the real numbers. 
+        It has two operations defined on it, {plus} plus N and {dot} dot N, and these operations obey 
+        {props} all the properties of normal addition and multiplication, but with {0box} 0 replaced by 
+        exp N of 0 and {1box} 1 replaced by exp N of 1. {outbox1} And these smaller copies of the real 
+        numbers are related to each other in two ways. First of all, {eqs} the dot operation of one copy 
+        is the same as the plus operation of the next, and second of all, you can go from {exp} K N to K N 
+        plus 1 using exp and go the {log} other way using log, and these two functions are isomorphisms.
                              
-        So {plusbox} plus N is a more restricted version of {dotbox} dot N minus 1. {outbox2} But this is not true for {plus0} plus 0, because there's no such thing as dot negative 1, and if there were, its domain, K negative 1, would have to be larger than the real numbers. But we {shift} shouldn't let that stop us. The rest of this video will be devoted to defining {kg1} K negative 1 as well as {kgn} K N for all negative integers N, resulting in a new number system which I call the {expnum} exponential numbers.
+        So {plusbox} plus N is a more restricted version of {dotbox} dot N minus 1. {outbox2} 
+        But this is not true for {plus0} plus 0, because there's no such thing as dot negative 1, 
+        and if there were, its domain, K negative 1, would have to be larger than the real numbers. 
+        But we {shift} shouldn't let that stop us. The rest of this video will be devoted to defining 
+        {kg1} K negative 1 as well as {kgn} K N for all negative integers N, resulting in a new number 
+        system which I call the {expnum} exponential numbers.
         """)
 
         with self.voiceover(text) as tracker:
@@ -1169,7 +1271,15 @@ class Scene6_11(ChainOfFields):
             self.play(Write(expo), run_time=WRITE_T)
         
         text = add_bookmarks("""
-        Since log maps each K N to K N minus 1, it should map {log} K 0 to K negative 1. This means {out} that K negative 1 will contain the {kg1} real numbers, as well as log of 0 and a logarithm for each negative number. For now, I'll draw this set as two lines with a point in the middle. The {p1} top line represents the real numbers, the {p2} central point is log of 0, and the {p3} bottom line consists of logs of negative numbers, with {lmx} log of minus X placed directly below {lx} log of X. For example, {shift0} 0 is {l1} log of 1, so the {shifts0} point below 0 is {lm1} log of minus 1. {shift1} 1 is {le} log of E, so the point {shifts1} below 1 is {lme} log of minus E.
+        Since log maps each K N to K N minus 1, it should map {log} K 0 to K negative 1. 
+        This means {out} that K negative 1 will contain the {kg1} real numbers, 
+        as well as log of 0 and a logarithm for each negative number. 
+        For now, I'll draw this set as two lines with a point in the middle. 
+        The {p1} top line represents the real numbers, the {p2} central point is log of 0, 
+        and the {p3} bottom line consists of logs of negative numbers, with {lmx} 
+        log of minus X placed directly below {lx} log of X. For example, {shift0} 
+        0 is {l1} log of 1, so the {shifts0} point below 0 is {lm1} log of minus 1. 
+        {shift1} 1 is {le} log of E, so the point {shifts1} below 1 is {lme} log of minus E.
         """)
 
         with self.voiceover(text) as tracker:
@@ -1260,7 +1370,13 @@ class Scene6_11(ChainOfFields):
         bottom = new_bottom
 
         text = add_bookmarks("""
-        To help you visualize how this extended logarithm works, I'll draw a {rdot} red dot here, call this number {x} X, and draw a {bdot} blue dot at the point log of X. {approach} As X approaches 0, its logarithm shoots off to the left. At {exact} exactly 0, its logarithm is the center point, and as it {below} decreases further, the logarithm shoots in from the left, {end} but now on the bottom line. Because of this behavior, I think it's accurate to call this center point {minf} minus infinity, and to say that {arr} these lower points are less than minus infinity.
+        To help you visualize how this extended logarithm works, 
+        I'll draw a {rdot} red dot here, call this number {x} X, 
+        and draw a {bdot} blue dot at the point log of X. {approach} As X approaches 0, 
+        its logarithm shoots off to the left. At {exact} exactly 0, its logarithm is the center point, 
+        and as it {below} decreases further, the logarithm shoots in from the left, {end} but now on the bottom line. 
+        Because of this behavior, I think it's accurate to call this center point {minf} minus infinity, 
+        and to say that {arr} these lower points are less than minus infinity.
         """)
 
         with self.voiceover(text) as tracker:
@@ -1298,7 +1414,10 @@ class Scene6_11(ChainOfFields):
         self.play(FadeOut(x_dot, l_dot, x_label, new_pointer3), run_time=FADEOUT_T)
 
         text = add_bookmarks("""
-        I'll introduce a new notation for these numbers. I'll denote the point directly {xsx} across from X as squiggle X, {shift0} so log of minus 1 {sq0} can also be referred to as squiggle 0. Applying the squiggle function is the same as reflecting across {hori} this horizontal line. {out} An explicit definition is given by {sqdef} squiggle X = log of minus exp of X.
+        I'll introduce a new notation for these numbers. I'll denote the point directly {xsx} across from X as squiggle X, 
+        {shift0} so log of minus 1 {sq0} can also be referred to as squiggle 0. Applying the squiggle function is the same 
+        as reflecting across {hori} this horizontal line. {out} An explicit definition is given by {sqdef} 
+        squiggle X = log of minus exp of X.
         """)
 
         with self.voiceover(text) as tracker:
@@ -1335,9 +1454,21 @@ class Scene6_11(ChainOfFields):
         ###############
 
         text = add_bookmarks("""
-        To see how we can extend {add} addition to this number system, we'll first look at how multiplication extends from the positive numbers to the {out} real numbers. In other words, how can we define {mul} real-number multiplication in terms of positive number multiplication. Well, {pos2} if both of the inputs happen to be positive, we simply multiply them. {posneg} If exactly one of the inputs is negative, we negate it to get two positive numbers, then multiply, and then negate the result. {neg2} If both are negative, we negate both of them and multiply, but we don't negate the result because negative times negative is positive. The only remaining case is {zero} where one or both of the inputs are zero, and in this case we just return zero.
+        To see how we can extend {add} addition to this number system, 
+        we'll first look at how multiplication extends from the positive numbers to the {out} real numbers. 
+        In other words, how can we define {mul} real-number multiplication in terms of positive number multiplication. 
+        Well, {pos2} if both of the inputs happen to be positive, we simply multiply them. {posneg} 
+        If exactly one of the inputs is negative, we negate it to get two positive numbers, then multiply, 
+        and then negate the result. {neg2} If both are negative, we negate both of them and multiply, 
+        but we don't negate the result because negative times negative is positive. 
+        The only remaining case is {zero} where one or both of the inputs are zero, 
+        and in this case we just return zero.
 
-        Now we'll repeat this construction, but instead of extending multiplication from positive numbers to reals, we'll extend addition from K 0 to K negative 1. All we need to do is replace {rep1} multiplication with addition, {rep2} 0 with minus infinity, and {rep3} minus with squiggle. {switch} For example, if you want to add {nums} these two numbers, you apply {sq1} squiggle to make them both real, then {sum} add them together, and then {sq2} squiggle the result.
+        Now we'll repeat this construction, but instead of extending multiplication from positive numbers to reals, 
+        we'll extend addition from K 0 to K negative 1. All we need to do is replace {rep1} multiplication with addition, 
+        {rep2} 0 with minus infinity, and {rep3} minus with squiggle. {switch} 
+        For example, if you want to add {nums} these two numbers, you apply {sq1} squiggle to make them both real, 
+        then {sum} add them together, and then {sq2} squiggle the result.
         """)
 
         with self.voiceover(text) as tracker:
@@ -1414,9 +1545,20 @@ class Scene6_11(ChainOfFields):
             self.play(Transform(z, z2))
 
         text = add_bookmarks("""
-        This is the best way to visualize the extended addition operation, {out} but there's a simpler way to {in} define it. If you {new} replace squiggle X with log of minus exp of X, replace the remaining occurrences of X with log of exp of X, do likewise with Y, and then expand the remaining squiggles, you get these horrific expressions. If we simplify them using the rules for log and exp, the minuses all cancel out, and in each case {simplify} we're left with log of exp of X times exp of Y. The case where one of the inputs is minus infinity also fits {formula} this formula, because if we {subst} plug in minus infinity, we get {log0} log of 0 times something, which is {minf} minus infinity. Therefore, our extended addition operation can be defined with {unify} this one formula.
+        This is the best way to visualize the extended addition operation, 
+        {out} but there's a simpler way to {in} define it. If you {new} replace squiggle X with log of minus exp of X, 
+        replace the remaining occurrences of X with log of exp of X, do likewise with Y, and then expand the remaining squiggles, 
+        you get these horrific expressions. If we simplify them using the rules for log and exp, the minuses all cancel out, 
+        and in each case {simplify} we're left with log of exp of X times exp of Y. 
+        The case where one of the inputs is minus infinity also fits {formula} this formula, 
+        because if we {subst} plug in minus infinity, we get {log0} log of 0 times something, 
+        which is {minf} minus infinity. Therefore, our extended addition operation can be defined with {unify} this one formula.
 
-        If you replace exp with {log1} log negative 1 and log with {exp1} exp negative 1, {out2} and recall how we {dotdef} defined all those dot operations, you can see that what I've been calling “extended addition” could also be called {dot1} dot negative 1. We can define {plus1} plus negative 1 in a similar fashion. {fade} So we've succeeded in {tower} extending this tower of operations in the negative direction.
+        If you replace exp with {log1} log negative 1 and log with {exp1} exp negative 1, 
+        {out2} and recall how we {dotdef} defined all those dot operations, 
+        you can see that what I've been calling “extended addition” could also be called {dot1} dot negative 1. 
+        We can define {plus1} plus negative 1 in a similar fashion. {fade} 
+        So we've succeeded in {tower} extending this tower of operations in the negative direction.
         """)
 
         with self.voiceover(text) as tracker:
@@ -1540,33 +1682,42 @@ class Scene6_11(ChainOfFields):
         ### SCENE 10 ###
         ################
 
+        # bookmarks messed up because of weird transcription
         text = add_bookmarks("""
-        But we have the same problem now as we had before. Unlike all the other plus operations, {plusbox} plus negative 1 has no generalization. {outbox} And the problem runs deeper than that. K negative 1 is isomorphic to K 0, because one can go {iso} back and forth between them using exp and log while preserving the structure of the dot and plus operations. K negative 1 might seem like a crazy new number system containing values less than minus infinity, {same} but it's structure is the same as that of the real numbers, it's the real numbers in disguise. K negative 1 is best thought of not as a new number system, but as a relabeling, or alternative presentation, of the reals. Nevertheless, this alternative presentation can give us insight into how we can extend things further. Once we've defined dot N and plus N for {ext} all integers N, we really will have a new number system.
+        But we have the same problem now as we had before. Unlike all the other plus operations, 
+        {plusbox} plus negative 1 has no generalization. {outbox} And the problem runs deeper than that. 
+        K negative 1 is isomorphic to K 0, because one can go {iso} back and forth between them using exp 
+        and log while preserving the structure of the dot and plus operations. 
+        K negative 1 might seem like a crazy new number system containing values less than minus infinity, 
+        {same} but it's structure is the same as that of the real numbers, it's the real numbers in disguise. 
+        K negative 1 is best thought of not as a new number system, but as a relabeling, or alternative presentation, 
+        of the reals. Nevertheless, this alternative presentation can give us insight into how we can extend things further. 
+        Once we've defined dot N and plus N for {ext} all integers N, we really will have a new number system.
         """)
 
         with self.voiceover(text) as tracker:
 
             plus_box = SurroundingRectangle(table[1], color=yellow, buff=0.1)
-            self.wait_until_bookmark('plusbox')
+            self.wait(5.5) # self.wait_until_bookmark('plusbox')
             self.play(Create(plus_box), run_time=BOX_T)
-            self.wait_until_bookmark('outbox')
+            self.wait(2) # self.wait_until_bookmark('outbox')
             self.play(FadeOut(plus_box), run_time=FADEOUT_T)
 
             log_arr = ArcBetweenPoints(table[3].get_corner(UR) + DOWN * 0.135, table[0].get_corner(DR) + DL * 0.05 + DOWN * 0.02, angle=(TAU / 7), color=purple).add_tip(**tip_size(0.27))
             exp_arr = ArcBetweenPoints(table[0].get_corner(DL), table[3].get_corner(UL) + DOWN * 0.18, angle=(TAU / 6), color=purple).add_tip(**tip_size(0.27))
             log = MathTex('\log', font_size=40, color=purple).next_to(log_arr, RIGHT, 0.1)
             exp = MathTex('\exp', font_size=40, color=purple).next_to(exp_arr, LEFT, 0.1)
-            self.wait_until_bookmark('iso')
+            self.wait(5) # self.wait_until_bookmark('iso')
             self.play(FadeIn(log_arr, exp_arr, log, exp), run_time=FADEIN_T)
 
             left = VGroup(table, *eqs, log_arr, exp_arr, log, exp)
             iso = Tex('$K_{-1}$', ' and ', '$K_0$', ' have \\\\ the same structure', font_size=50).shift(RIGHT * 3)
             iso.get_parts_by_tex('K').set_color(green)
-            self.wait_until_bookmark('same')
+            self.wait(12) # self.wait_until_bookmark('same')
             self.play(FadeIn(iso), left.animate.shift(LEFT * 2.5), run_time=MOVE_T)
 
             top_dots = table[15:].copy().set_opacity(0).next_to(table, UP, buff=0.75)
-            self.wait_until_bookmark('ext')
+            self.wait(18) # self.wait_until_bookmark('ext')
             self.play(left.animate.shift(DOWN * 0.87), top_dots.animate.set_opacity(1).shift(DOWN * 0.87), run_time=MOVE_T)
     
         self.play(FadeOut(*self.get_top_level_mobjects()), run_time=FADEOUT_T)
@@ -1578,7 +1729,11 @@ class Scene6_11(ChainOfFields):
         (K_1, top, log0, minf, bottom) = self.K_1
 
         text = add_bookmarks("""
-        To make this easier, I'm going to change how I depict {in} K negative 1. Instead of putting {cur} log of minus X directly below log of X, I'm going to {shift} put it below {m1} minus X. And similarly, log of 0 will go {log0} directly below 0. {outl} This arrangement is less symmetric, but it's more obvious now how we're extending K 0 to K negative 1; we're just {arr} adding logs of non-positive numbers. And we can {etc} keep going.
+        To make this easier, I'm going to change how I depict {in} K negative 1. 
+        Instead of putting {cur} log of minus X directly below log of X, 
+        I'm going to {shift} put it below {m1} minus X. And similarly, log of 0 will go {log0} directly below 0. 
+        {outl} This arrangement is less symmetric, but it's more obvious now how we're extending K 0 to K negative 1; 
+        we're just {arr} adding logs of non-positive numbers. And we can {etc} keep going.
         """)
 
         with self.voiceover(text) as tracker:
@@ -1636,7 +1791,11 @@ class Scene6_11(ChainOfFields):
             self.play(FadeOut(arr, log, K_1), Transform(top, top_target), Transform(lines, lines_target), Transform(vdots, vdots_target), run_time=1.5)
 
         text = add_bookmarks("""
-        So now we have a line at the top, representing the {real} real numbers, and infinitely many half-lines below it, representing {log1} logs of non-positive numbers, {log2} logs of those numbers, {etc} and so on. I'll call this whole set {e} E, and call its elements {expo} exponential numbers. {total} Every exponential number has a logarithm, which is itself an exponential number. This property makes E unique among all of the sets we've seen so far. 
+        So now we have a line at the top, representing the {real} real numbers, 
+        and infinitely many half-lines below it, representing {log1} logs of non-positive numbers, 
+        {log2} logs of those numbers, {etc} and so on. I'll call this whole set {e} E, and call its elements 
+        {expo} exponential numbers. {total} Every exponential number has a logarithm, which is itself an exponential number. 
+        This property makes E unique among all of the sets we've seen so far. 
         """)
 
         with self.voiceover(text) as tracker:
@@ -1669,7 +1828,15 @@ class Scene6_11(ChainOfFields):
             self.play(FadeIn(total), run_time=FADEIN_T)
         
         text = add_bookmarks("""
-        We can now define K N for all integers N. {k0} K 0 is the top line, {kg1} K negative 1 is the top two lines, {kg2} K negative 2 is the top three lines, {kg3} K negative 3 is the top four lines, and so on. {out} And the {def} definitions of plus N and dot N now make sense for all negative indices. For example, {dotg3} dot negative 3 takes two inputs, {xy} X and Y, applies {exp3} exp three times to each of them, {mul} multiplies the results, and then applies {log3} log three times. The domain of this operation is {dom} K negative 3, because the formula only works if applying exp three times gets you to the real numbers, so the input has to be somewhere in the top four lines.
+        We can now define K N for all integers N. {k0} K 0 is the top line, 
+        {kg1} K negative 1 is the top two lines, {kg2} K negative 2 is the top three lines, 
+        {kg3} K negative 3 is the top four lines, and so on. 
+        {out} And the {def} definitions of plus N and dot N now make sense for all negative indices. 
+        For example, {dotg3} dot negative 3 takes two inputs, {xy} X and Y, 
+        applies {exp3} exp three times to each of them, {mul} multiplies the results, 
+        and then applies {log3} log three times. The domain of this operation is {dom} K negative 3, 
+        because the formula only works if applying exp three times gets you to the real numbers, 
+        so the input has to be somewhere in the top four lines.
         """)
         
         with self.voiceover(text) as tracker:
@@ -1735,7 +1902,13 @@ class Scene6_11(ChainOfFields):
         )
 
         text = add_bookmarks("""
-        There's an easier way to visualize these operations. First, we extend each of these half-lines into a {full} full line. Each point is the log of the point above it, so {lx1} this is the log of {x} this. But {lx2} this is also the log of the red point, so {corr} these two points are equivalent, they represent the same exponential number. {out} There is no longer a one-to-one correspondence between numbers and points; in fact, each number is represented by {inf} infinitely many points. To give you an idea of which points are equivalent, {out2} I'll draw {guides} these guidelines.
+        There's an easier way to visualize these operations. 
+        First, we extend each of these half-lines into a {full} full line. Each point is the log of the point above it, 
+        so {lx1} this is the log of {x} this. But {lx2} this is also the log of the red point, so {corr} 
+        these two points are equivalent, they represent the same exponential number. {out} 
+        There is no longer a one-to-one correspondence between numbers and points; in fact, 
+        each number is represented by {inf} infinitely many points. To give you an idea of which points are equivalent, 
+        {out2} I'll draw {guides} these guidelines.
         """)
 
         with self.voiceover(text) as tracker:
@@ -1794,8 +1967,15 @@ class Scene6_11(ChainOfFields):
             self.wait_until_bookmark('guides')
             self.play(FadeIn(guides), run_time=FADEIN_T)
         
+        self.wait(0.75)
+        
         text = add_bookmarks("""
-        Earlier I said that K negative 2 consists of the top three lines. But now we can think of the third line on its own as {kg2} K negative 2, since all of the {points} points above this line have {equiv} equivalent points within it. So each of these lines corresponds to {kn} K N for some non-positive N. We can extend this to positive N as well, {shift} by drawing K 1 on its own line above the real numbers, and so on. To be clear, we aren't adding any new values by doing this, but it makes the presentation more symmetrical.
+        Earlier I said that K negative 2 consists of the top three lines. 
+        But now we can think of the third line on its own as {kg2} K negative 2, 
+        since all of the {points} points above this line have {equiv} equivalent points within it. 
+        So each of these lines corresponds to {kn} K N for some non-positive N. We can extend this to positive N as well, 
+        {shift} by drawing K 1 on its own line above the real numbers, and so on. To be clear, 
+        we aren't adding any new values by doing this, but it makes the presentation more symmetrical.
         """)
 
         with self.voiceover(text) as tracker:
@@ -1830,7 +2010,12 @@ class Scene6_11(ChainOfFields):
             )
 
         text = add_bookmarks("""
-        So here's how to visualize the dot and plus operations. Say we want to apply plus negative 2 to {xy} these two values, X and Y. Each is represented by {sev} several points on the screen. We look at the {box} points which are on the K negative 2 line, and {add} add them as if it were the real number line. The result is {res} X plus negative 2 Y. For another example, {out} suppose we want to apply dot 2 to {xy2} these two values. {sev2} We look at their {box2} representations on the K 2 line, and then {mul} multiply them as if this were the real number line.
+        So here's how to visualize the dot and plus operations. Say we want to apply plus negative 2 to {xy} these two values, 
+        X and Y. Each is represented by {sev} several points on the screen. 
+        We look at the {box} points which are on the K negative 2 line, and {add} add them as if it were the real number line. 
+        The result is {res} X plus negative 2 Y. For another example, {out} suppose we want to apply dot 2 to {xy2} these two values. 
+        {sev2} We look at their {box2} representations on the K 2 line, 
+        and then {mul} multiply them as if this were the real number line.
         """)
 
         with self.voiceover(text) as tracker:
@@ -1898,6 +2083,8 @@ class Scene6_11(ChainOfFields):
             run_time=FADEALL_T)
 
 class Scene12_13(ChainOfFields):
+    audio_dir = 'assets/audio/Scene12_13'
+
     def construct(self):
 
         ################
@@ -1905,7 +2092,15 @@ class Scene12_13(ChainOfFields):
         ################
 
         text = add_bookmarks("""
-        So to summarize, we've constructed this set {e} E by extending the real numbers with logs of non-positive numbers, logs of those values, and so on. E contains a subset {kn} K N for each integer N, and these subsets form an {chain} infinite descending chain, with K N plus 1 contained inside K N. {k0} K 0 is the real number line we started with, and {kndef} K N is defined as the set exp N of X for all real numbers X. For example, {kg2def} K negative 2 is the set of logs of logs of real numbers, since exp negative 2 is the same as log 2. {out} Each K N has its own versions of addition and multiplication, denoted {plusn} plus N and {dotn} dot N, and these are {def} defined as shown. {rel} Plus N is the same as dot N minus 1, when both are defined, and this means that {distr} dot N distributes over dot N minus 1. In other words, we have a {opchain} chain of binary operations, with each distributing over the one before it, and this chain extends infinitely in both directions.
+        So to summarize, we've constructed this set {e} E by extending the real numbers with logs of non-positive numbers, 
+        logs of those values, and so on. E contains a subset {kn} K N for each integer N, and these subsets form an {chain} 
+        infinite descending chain, with K N plus 1 contained inside K N. K 0 {k0} is the real number line we started with, 
+        and {kndef} K N is defined as the set exp N of X for all real numbers X. For example, {kg2def} K negative 2 is 
+        the set of logs of logs of real numbers, since exp negative 2 is the same as log 2. {out} Each K N has its own 
+        versions of addition and multiplication, {plusn} denoted {plusn} plus N {dotn} and dot N, and these are {def} defined as shown. 
+        {rel} Plus N is the same as dot N minus 1, when both are defined, and this means that {distr} dot N distributes 
+        over dot N minus 1. In other words, we have a {opchain} chain of binary operations, with each distributing over 
+        the one before it, and this chain extends infinitely in both directions.
         """)
 
         with self.voiceover(text) as tracker:
@@ -1964,7 +2159,12 @@ class Scene12_13(ChainOfFields):
         ################
 
         text = add_bookmarks("""
-        I'll end this video with two exercises for the viewer. First, there is a natural {f} bijection between the exponential numbers and the reals, {map0} mapping 0 to 0, {map1} 1 to 1, {mape} E to 2, {maplog0} log of 0 to minus 1, and in general, {gen} mapping exp N of 0 to N for all integers N. {q1} Find this bijection. {q2} Second, show how E can be defined as a colimit. Leave your answers in the comments, and of course, {sub} subscribe to my channel. I'll be posting {more} more videos like this in the future.
+        I'll end this video with two exercises for the viewer. 
+        First, there is a natural {f} bijection between the exponential numbers and the reals, 
+        {map0} mapping 0 to 0, {map1} 1 to 1, {mape} E to 2, {maplog0} log of 0 to minus 1, and in general, 
+        {gen} mapping exp N of 0 to N for all integers N. {q1} Find this bijection. 
+        {q2} Second, show how E can be defined as a colimit. Leave your answers in the comments, 
+        and of course, {sub} subscribe to my channel. I'll be posting {more} more videos like this in the future.
         """)
 
         with self.voiceover(text) as tracker:
